@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto grid gap-8 px-6 py-10 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2 font-display text-lg font-bold">
-            <Sigma className="h-5 w-5 text-primary" />
+            <Sigma className="h-5 w-5 text-primary animate-logo-spin" />
             Math Buddy
           </div>
           <p className="mt-2 text-sm text-muted-foreground">

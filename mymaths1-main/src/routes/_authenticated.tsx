@@ -5,8 +5,9 @@ import {
   Outlet,
   useNavigate,
 } from "@tanstack/react-router";
-import { LogOut, Trophy, Flame } from "lucide-react";
+import { LogOut, Trophy, Flame, Download, Loader2, Sigma } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   SidebarProvider,
@@ -20,6 +21,7 @@ import { Footer } from "@/components/footer";
 import { useServerFn } from "@tanstack/react-start";
 import { pingStreak, getMyProfile } from "@/lib/gamification.functions";
 import { getClientUser } from "@/lib/auth-helpers";
+import { generateProjectZip } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
@@ -35,8 +37,31 @@ function AuthLayout() {
   const navigate = useNavigate();
   const ping = useServerFn(pingStreak);
   const getProfileFn = useServerFn(getMyProfile);
+  const generateZipFn = useServerFn(generateProjectZip);
   const [points, setPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState<number>(0);
+  const [downloading, setDownloading] = useState(false);
+
+  const onDownloadZip = async () => {
+    setDownloading(true);
+    toast.info("Generating project ZIP file, please wait...");
+    try {
+      await generateZipFn({});
+      
+      const link = document.createElement("a");
+      link.href = "/project.zip";
+      link.download = "math-buddy.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Project ZIP downloaded successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to download ZIP file");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -61,17 +86,21 @@ function AuthLayout() {
   }, [ping, getProfileFn]);
 
   const onLogout = async () => {
-    localStorage.removeItem("dev_bypass_auth");
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/85 px-4 py-2 backdrop-blur no-print">
+            <div className="flex items-center gap-2 font-display font-bold text-foreground mr-2 shrink-0 select-none">
+              <Sigma className="h-5 w-5 text-primary animate-logo-spin" />
+              <span className="text-base sm:text-lg">Math Buddy</span>
+            </div>
+            <div className="h-4 w-[1px] bg-border mr-1" />
             <SidebarTrigger />
             <div className="hidden flex-1 sm:block">
               <GlobalSearch />
@@ -87,6 +116,22 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDownloadZip}
+                disabled={downloading}
+                className="h-8 border-indigo-500/25 hover:bg-indigo-500/5 text-indigo-500 font-semibold gap-1.5 px-2.5 sm:px-3"
+                title="Download app source code as ZIP file"
+              >
+                {downloading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">Install App</span>
+                <span className="sm:hidden">Install</span>
+              </Button>
               <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
                 <LogOut className="h-4 w-4" />

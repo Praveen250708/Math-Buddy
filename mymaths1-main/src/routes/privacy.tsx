@@ -17,7 +17,7 @@ function PrivacyPage() {
     <div className="min-h-screen">
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold">
-          <Sigma className="h-6 w-6 text-primary" /> Math Buddy
+          <Sigma className="h-6 w-6 text-primary animate-logo-spin" /> Math Buddy
         </Link>
         <Link to="/login" className="text-sm font-medium hover:underline">Sign in</Link>
       </header>

@@ -73,7 +73,7 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-display text-2xl font-bold">
-          <Sigma className="h-7 w-7 text-primary-glow" />
+          <Sigma className="h-7 w-7 text-primary-glow animate-logo-spin" />
           Math Buddy
         </Link>
 
@@ -87,19 +87,7 @@ function LoginPage() {
               : "Start earning focus-points today."}
           </p>
 
-          <Button
-            type="button"
-            variant="secondary"
-            className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition-all"
-            onClick={() => {
-              localStorage.setItem("dev_bypass_auth", "true");
-              navigate({ to: "/dashboard" });
-              toast.success("Logged in in Guest Mode");
-            }}
-            disabled={loading}
-          >
-            👤 Continue as Guest (Guest Mode)
-          </Button>
+
 
           <Button
             type="button"

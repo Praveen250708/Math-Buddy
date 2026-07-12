@@ -5,7 +5,7 @@ import { Calculator, Loader2, Bookmark, Mic, MicOff, Play, Pause, Square, Volume
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { solveStepByStep } from "@/lib/ai.functions";
+import { solveStepByStep, getSpeechAudio } from "@/lib/ai.functions";
 import { addBookmark } from "@/lib/bookmarks.functions";
 import { PageHeader, ResultPanel } from "./formulas";
 import { consumePrefilledTopic } from "@/lib/topic-prefill";
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/solver")({
 function SolverPage() {
   const fn = useServerFn(solveStepByStep);
   const bookmarkFn = useServerFn(addBookmark);
+  const getSpeechAudioFn = useServerFn(getSpeechAudio);
   const [problem, setProblem] = useState("");
   const [image, setImage] = useState<{ mimeType: string; data: string } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -35,6 +36,7 @@ function SolverPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [voiceTone, setVoiceTone] = useState<"female" | "male">("female");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -47,6 +49,10 @@ function SolverPage() {
     return () => {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
       }
     };
   }, []);
@@ -236,6 +242,39 @@ function SolverPage() {
     utterance.pitch = 1.0;
 
     const targetVoices = voices.filter((v) => v.lang.toLowerCase().startsWith(langCode));
+
+    if (targetVoices.length === 0) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      getSpeechAudioFn({ data: { text, langCode } })
+        .then((res) => {
+          if (!audioRef.current) return;
+          audioRef.current.src = res.audio;
+          audioRef.current.onended = () => {
+            if (!isPausedRef.current && currentIndexRef.current === index) {
+              speakSentence(index + 1);
+            }
+          };
+          audioRef.current.onerror = (e) => {
+            console.error("Audio TTS error:", e);
+            setIsPlaying(false);
+            setIsPaused(false);
+          };
+          audioRef.current.play().catch((err) => {
+            console.error("Failed to play fallback audio:", err);
+            setIsPlaying(false);
+            setIsPaused(false);
+          });
+        })
+        .catch((err) => {
+          console.error("TTS fetch error:", err);
+          setIsPlaying(false);
+          setIsPaused(false);
+        });
+      return;
+    }
+
     const maleNames = ["david", "james", "mark", "george", "guy", "male", "ravi", "harsh", "pawan", "google us english", "daniel"];
     const femaleNames = ["zira", "hazel", "susan", "mary", "heera", "swara", "female", "woman", "girl", "google uk english female", "veena", "karen"];
 
@@ -281,6 +320,10 @@ function SolverPage() {
     }
 
     window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
 
     const cleaned = cleanTextForSpeech(text, language);
     sentencesRef.current = cleaned
@@ -299,15 +342,26 @@ function SolverPage() {
   };
 
   const pauseSpeech = () => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
+    if (typeof window !== "undefined") {
       setIsPaused(true);
-      window.speechSynthesis.cancel();
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     }
   };
 
   const stopSpeech = () => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    if (typeof window !== "undefined") {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
       setIsPlaying(false);
       setIsPaused(false);
       currentIndexRef.current = 0;
@@ -331,7 +385,18 @@ function SolverPage() {
     latestTranscriptRef.current = "";
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    const localeMap: Record<string, string> = {
+      English: "en-US",
+      Spanish: "es-ES",
+      French: "fr-FR",
+      Hindi: "hi-IN",
+      German: "de-DE",
+      Chinese: "zh-CN",
+      Malayalam: "ml-IN",
+      Telugu: "te-IN",
+      Tamil: "ta-IN",
+    };
+    recognition.lang = localeMap[language] || "en-US";
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;

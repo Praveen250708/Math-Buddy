@@ -310,3 +310,44 @@ Ensure the layout is highly structured and beautiful.`;
 
     return { content };
   });
+
+export const getSpeechAudio = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        text: z.string().trim().min(1),
+        langCode: z.string().trim().min(2),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${data.langCode}&client=tw-ob&q=${encodeURIComponent(data.text)}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36"
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch TTS: ${res.status}`);
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    return { audio: `data:audio/mpeg;base64,${base64}` };
+  });
+
+export const generateProjectZip = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const cmd = `powershell -Command "Compress-Archive -Path src, public/_redirects, package.json, tsconfig.json, vite.config.ts, components.json, eslint.config.js, wrangler.jsonc, bunfig.toml -DestinationPath public/project.zip -Force"`;
+    try {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+      await execAsync(cmd, { cwd: process.cwd() });
+      return { success: true };
+    } catch (err) {
+      console.error("Error zipping project:", err);
+      throw new Error("Failed to generate zip file on the server.");
+    }
+  });
+
+

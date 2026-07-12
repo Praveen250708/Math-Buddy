@@ -34,7 +34,7 @@ function Landing() {
     <div className="min-h-screen">
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2 font-display text-xl font-bold">
-          <Sigma className="h-6 w-6 text-primary" />
+          <Sigma className="h-6 w-6 text-primary animate-logo-spin" />
           <span>Math Buddy</span>
         </div>
         <Link to="/login">

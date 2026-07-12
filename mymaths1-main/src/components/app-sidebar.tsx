@@ -47,18 +47,12 @@ const trackItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const collapsed = state === "collapsed";
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (p: string) => path === p || path.startsWith(p + "/");
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2 font-display font-bold">
-          <Sigma className="h-5 w-5 text-primary" />
-          {!collapsed && <span>Math Buddy</span>}
-        </Link>
-      </SidebarHeader>
+      <div className="h-[53px] w-full border-b border-sidebar-border shrink-0 md:block hidden" />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Study</SidebarGroupLabel>
@@ -69,7 +63,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
                     <Link to={item.to} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                      <span className="sidebar-text">{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -87,7 +81,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
                     <Link to={item.to} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                      <span className="sidebar-text">{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

@@ -308,3 +308,58 @@
   margin: 1rem 0;
   overflow-x: auto;
 }
+
+/* Premium live 3D spinning logo animation */
+@keyframes logo-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.animate-logo-spin {
+  animation: logo-spin 3s linear infinite;
+  transform-origin: center;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  display: inline-block;
+  transition: filter 0.3s ease;
+}
+
+.animate-logo-spin:hover {
+  filter: drop-shadow(0 0 10px var(--color-primary-glow)) drop-shadow(0 0 3px var(--color-accent));
+}
+
+/* Smooth, lag-free slide-out sidebar */
+@media (min-width: 768px) {
+  /* Prevent the sidebar spacer from expanding, keeping the page layout completely static and lag-free */
+  .group.peer.hidden.md\:block > div:first-child {
+    width: var(--sidebar-width-icon, 3rem) !important;
+  }
+
+  /* Add a smooth drop shadow when the sidebar is expanded */
+  div[data-state="expanded"] .fixed.inset-y-0 {
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  /* Default text transition and state when expanded */
+  .sidebar-text {
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+    max-width: 200px;
+    opacity: 1;
+    min-width: max-content;
+  }
+
+  /* Hide text when collapsed */
+  div[data-state="collapsed"] .sidebar-text {
+    opacity: 0;
+    max-width: 0;
+  }
+}
+
+
