@@ -66,6 +66,8 @@ function Dashboard() {
         setPoints(profile.total_points);
         setStreak(profile.current_streak ?? 0);
         setLongest(profile.longest_streak ?? 0);
+      } else if (typeof window !== "undefined" && localStorage.getItem("guest-login") === "true") {
+        setName("guest");
       }
       setAchievements((ach.achievements ?? []).map((a: any) => a.code));
       setProgress(prog.progress ?? []);
@@ -93,7 +95,7 @@ function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold md:text-4xl">
-            Welcome back{name ? `, ${name}` : ""} 👋
+            {name.toLowerCase() === "guest" ? "Welcome, guest" : `Welcome back${name ? `, ${name}` : ""}`} 👋
           </h1>
           <p className="mt-1 text-muted-foreground">Keep the streak going. What are we mastering today?</p>
         </div>

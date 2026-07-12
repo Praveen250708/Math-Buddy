@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { Sigma } from "lucide-react";
+import { Sigma, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,19 @@ function LoginPage() {
     }
   };
 
+  const onGuestLogin = async () => {
+    setLoading(true);
+    try {
+      localStorage.setItem("guest-login", "true");
+      toast.success("Logged in as Guest!");
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error("Guest login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -76,7 +89,7 @@ function LoginPage() {
           <Sigma className="h-7 w-7 text-primary-glow animate-logo-spin" />
           Math Buddy
         </Link>
-
+ 
         <div className="rounded-2xl border border-border bg-gradient-card p-8 shadow-elegant">
           <h1 className="font-display text-2xl font-bold">
             {mode === "signin" ? "Welcome back" : "Create your account"}
@@ -86,9 +99,7 @@ function LoginPage() {
               ? "Sign in to continue your study streak."
               : "Start earning focus-points today."}
           </p>
-
-
-
+ 
           <Button
             type="button"
             variant="outline"
@@ -103,6 +114,17 @@ function LoginPage() {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" fill="#EA4335"/>
             </svg>
             Continue with Google
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-2 w-full border-dashed border-primary/40 text-primary-glow hover:bg-primary/5 flex items-center justify-center gap-1.5"
+            onClick={onGuestLogin}
+            disabled={loading}
+          >
+            <Rocket className="h-4 w-4 text-primary animate-pulse" />
+            Guest Login
           </Button>
 
           <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">

@@ -86,6 +86,7 @@ function AuthLayout() {
   }, [ping, getProfileFn]);
 
   const onLogout = async () => {
+    localStorage.removeItem("guest-login");
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
@@ -116,26 +117,10 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onDownloadZip}
-                disabled={downloading}
-                className="h-8 border-indigo-500/25 hover:bg-indigo-500/5 text-indigo-500 font-semibold gap-1.5 px-2.5 sm:px-3"
-                title="Download app source code as ZIP file"
-              >
-                {downloading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
-                )}
-                <span className="hidden sm:inline">Install App</span>
-                <span className="sm:hidden">Install</span>
-              </Button>
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
-                <LogOut className="h-4 w-4" />
-              </Button>
+               <ThemeToggle />
+               <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
+                 <LogOut className="h-4 w-4" />
+               </Button>
             </div>
           </header>
 
