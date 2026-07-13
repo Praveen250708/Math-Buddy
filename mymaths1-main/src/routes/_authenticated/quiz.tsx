@@ -5,6 +5,7 @@ import { Target, Loader2, Check, X, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateQuiz, type QuizQuestion } from "@/lib/ai.functions";
 import { submitQuiz } from "@/lib/gamification.functions";
 import { MarkdownView } from "@/components/markdown-view";
@@ -20,6 +21,7 @@ function QuizPage() {
   const submitFn = useServerFn(submitQuiz);
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "mixed">("mixed");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
   const [stage, setStage] = useState<"setup" | "quiz" | "result">("setup");
@@ -35,7 +37,7 @@ function QuizPage() {
     if (!topic.trim()) return;
     setLoading(true);
     try {
-      const res = await genFn({ data: { topic } });
+      const res = await genFn({ data: { topic, difficulty } });
       setQuestions(res.questions);
       setAnswers(Array(res.questions.length).fill(-1));
       setActiveTopic(topic);
@@ -83,6 +85,26 @@ function QuizPage() {
         icon={<Target className="h-6 w-6" />}
         title="Quiz Mode"
         subtitle="Enter a topic. Get 10 AI-generated MCQs. Earn focus-points."
+        extra={
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Difficulty:</span>
+            <Select
+              value={difficulty}
+              onValueChange={(v) => setDifficulty(v as any)}
+              disabled={stage !== "setup" || loading}
+            >
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue placeholder="Difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mixed">Mixed</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
       />
 
       {stage === "setup" && (

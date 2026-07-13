@@ -5,6 +5,7 @@ import { Lightbulb, Loader2, Search, Bookmark, Mic, MicOff } from "lucide-react"
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getImportantQuestions } from "@/lib/ai.functions";
 import { addBookmark } from "@/lib/bookmarks.functions";
 import { PageHeader, ResultPanel } from "./formulas";
@@ -20,6 +21,7 @@ function QuestionsPage() {
   const bookmarkFn = useServerFn(addBookmark);
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "mixed">("mixed");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -87,18 +89,25 @@ function QuestionsPage() {
     }
   }, []);
 
-  const submit = async (t: string) => {
+  const submit = async (t: string, diff = difficulty) => {
     if (!t.trim()) return;
     setLoading(true);
     setContent("");
     try {
-      const res = await fn({ data: { topic: t } });
+      const res = await fn({ data: { topic: t, difficulty: diff } });
       setContent(res.content);
       setActiveTopic(t);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDifficultyChange = (newDifficulty: "easy" | "medium" | "hard" | "mixed") => {
+    setDifficulty(newDifficulty);
+    if (activeTopic) {
+      void submit(activeTopic, newDifficulty);
     }
   };
 
@@ -124,6 +133,26 @@ function QuestionsPage() {
         icon={<Lightbulb className="h-6 w-6" />}
         title="Important Questions"
         subtitle="The 10 most-asked exam questions for any college math topic, with hints."
+        extra={
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Difficulty:</span>
+            <Select
+              value={difficulty}
+              onValueChange={(v) => handleDifficultyChange(v as any)}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue placeholder="Difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mixed">Mixed</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
       />
 
       <form

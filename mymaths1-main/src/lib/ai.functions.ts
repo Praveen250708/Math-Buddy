@@ -153,19 +153,34 @@ No greetings, no filler, no "let's", no "certainly".`;
 
 export const getImportantQuestions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ topic: z.string().trim().min(1).max(200) }).parse(input),
+    z
+      .object({
+        topic: z.string().trim().min(1).max(200),
+        difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    const difficultyStr = data.difficulty || "mixed";
+    const difficultyInstruction = 
+      difficultyStr === "easy" 
+        ? "All questions must be EASY (straightforward conceptual or basic calculations)."
+        : difficultyStr === "medium"
+        ? "All questions must be MEDIUM (typical college-level homework/exam questions requiring some application of formulas)."
+        : difficultyStr === "hard"
+        ? "All questions must be HARD (challenging conceptual questions, deep calculations, or proofs)."
+        : "Mix conceptual, computational, and proof-style questions (Easy / Medium / Hard).";
+
     const content = await callAI(
       `You are an expert ${LEVEL} tutor and exam-question curator.
 Given a topic, generate the 10 most important / most-frequently-asked exam questions on that topic.
 ALL math must be real LaTeX wrapped in $ ... $ for inline and $$ ... $$ for display. Use \\frac, \\sqrt, \\int, ^{}, _{} — never plain ASCII like x^2 or sqrt(x).
 Format as Markdown:
-## Important Questions on <topic>
+## Important Questions on <topic> (Difficulty: ${difficultyStr.toUpperCase()})
 Numbered list 1–10. For each:
 - The question (clear, exam-style, with LaTeX math)
 - Italic: difficulty (Easy / Medium / Hard) and a 1-line hint of the technique to use
-Mix conceptual, computational, and proof-style questions. No answers, only questions + hints.`,
+- ${difficultyInstruction} No answers, only questions + hints.`,
       `Topic: ${data.topic}`,
     );
     return { content };
@@ -180,15 +195,30 @@ export type QuizQuestion = {
 
 export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ topic: z.string().trim().min(1).max(200) }).parse(input),
+    z
+      .object({
+        topic: z.string().trim().min(1).max(200),
+        difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    const difficultyStr = data.difficulty || "mixed";
+    const difficultyInstruction = 
+      difficultyStr === "easy" 
+        ? "All questions must be at an EASY level (straightforward conceptual or basic calculations)."
+        : difficultyStr === "medium"
+        ? "All questions must be at a MEDIUM level (typical college-level homework/exam questions requiring some application of formulas)."
+        : difficultyStr === "hard"
+        ? "All questions must be at a HARD level (challenging conceptual questions, deep calculations, or mathematical proofs)."
+        : "Mix Easy/Medium/Hard questions.";
+
     const raw = await callAI(
       `You are a ${LEVEL} quiz generator. Generate exactly 10 multiple-choice questions on the given topic.
 Output STRICT JSON only, matching this schema:
 { "questions": [ { "q": string, "options": [string, string, string, string], "answer": 0|1|2|3, "explanation": string } ] }
 - Use real LaTeX inside strings: inline $...$ and display $$...$$. Use \\\\frac, \\\\sqrt, \\\\int, ^{}, _{} — escape backslashes properly for JSON.
-- Mix Easy/Medium/Hard. Make distractors plausible. Explanation is 1–2 sentences.
+- ${difficultyInstruction} Make distractors plausible. Explanation is 1–2 sentences.
 - No greetings, no extra keys, no markdown fences.`,
       `Topic: ${data.topic}`,
       true,
@@ -349,5 +379,115 @@ export const generateProjectZip = createServerFn({ method: "POST" })
       throw new Error("Failed to generate zip file on the server.");
     }
   });
+
+export const performMathOcr = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        image: z.object({
+          mimeType: z.string(),
+          data: z.string(),
+        }),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const MATHPIX_APP_ID = process.env.MATHPIX_APP_ID || import.meta.env.VITE_MATHPIX_APP_ID;
+    const MATHPIX_APP_KEY = process.env.MATHPIX_APP_KEY || import.meta.env.VITE_MATHPIX_APP_KEY;
+
+    if (MATHPIX_APP_ID && MATHPIX_APP_KEY) {
+      try {
+        const res = await fetch("https://api.mathpix.com/v3/text", {
+          method: "POST",
+          headers: {
+            "app_id": MATHPIX_APP_ID.trim(),
+            "app_key": MATHPIX_APP_KEY.trim(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            src: `data:${data.image.mimeType};base64,${data.image.data}`,
+            formats: ["text"],
+            data_options: {
+              include_latex: true
+            }
+          })
+        });
+        if (res.ok) {
+          const result = await res.json();
+          return { text: result.text || "" };
+        } else {
+          console.warn("Mathpix API failed, falling back to Gemini OCR. Status:", res.status);
+        }
+      } catch (err) {
+        console.warn("Mathpix request error, falling back to Gemini OCR:", err);
+      }
+    }
+
+    const ocrSystemPrompt = `You are a professional mathematics OCR reader.
+Analyze the image containing a mathematical problem (which could be handwritten or printed).
+Your task is to transcribe the math problem text and math symbols exactly as they are in the image.
+Translate all equations, functions, symbols, and graphs to proper LaTeX notation:
+- Wrap inline math in $...$
+- Wrap display equations on their own line in $$...$$
+- Use LaTeX tags such as \\frac, \\sqrt, \\int, \\sum, \\lim, ^{}, _{}, etc.
+Return ONLY the transcribed mathematical text and formulas.
+Do not provide any explanations, solutions, greeting, or extra text.
+If the image doesn't contain any clear mathematical problem or text, return: "We couldn't read that clearly — try retaking the photo with better lighting, or type the problem manually."`;
+
+    const ocrUserPrompt = "Please transcribe the math problem in this image.";
+    const text = await callAI(
+      ocrSystemPrompt,
+      ocrUserPrompt,
+      false,
+      data.image
+    );
+    return { text };
+  });
+
+export const solveMathProblemWithAi = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        problem: z.string().trim().min(1),
+        language: z.string().trim().optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const lang = data.language || "English";
+    const systemPrompt = `You are an expert math tutor. Solve the math problem and return the result in strict JSON format.
+You must return the response as a JSON object matching this schema:
+{
+  "recognizedProblem": "The LaTeX transcription of the problem",
+  "finalAnswer": "The LaTeX representation of the final answer",
+  "steps": [
+    {
+      "title": "A short, descriptive step title (e.g., 'Simplify the fraction')",
+      "explanation": "A friendly, simple, conversational explanation of what we do in this step and why, using simple language.",
+      "latex": "The mathematical equations for this step as LaTeX display math wrapped in $$...$$"
+    }
+  ]
+}
+IMPORTANT:
+- You must write the recognizedProblem, finalAnswer, and the explanation and title of each step in the requested language: ${lang}.
+- Use proper LaTeX in all math fields. Always wrap block math equations in double dollar signs: $$...$$.
+- Do not skip any steps. Provide a complete, logical path to the solution.
+- Return ONLY raw JSON text. Do not include markdown code block backticks like \`\`\`json or \`\`\`.`;
+
+    const content = await callAI(
+      systemPrompt,
+      `Solve this problem in ${lang}: ${data.problem}`,
+      true
+    );
+
+    try {
+      const parsed = JSON.parse(content);
+      return parsed;
+    } catch (err) {
+      console.error("Failed to parse JSON response from Gemini:", content);
+      throw new Error("Failed to generate a valid step-by-step solution. Please try again.");
+    }
+  });
+
 
 

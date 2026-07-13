@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated/topics'
 import { Route as AuthenticatedStudyRouteImport } from './routes/_authenticated/study'
 import { Route as AuthenticatedSolverRouteImport } from './routes/_authenticated/solver'
+import { Route as AuthenticatedSnapSolveRouteImport } from './routes/_authenticated/snap-solve'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated/questions'
 import { Route as AuthenticatedPaperSolverRouteImport } from './routes/_authenticated/paper-solver'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedFormulasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedExamPlannerRouteImport } from './routes/_authenticated/exam-planner'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -76,6 +78,11 @@ const AuthenticatedStudyRoute = AuthenticatedStudyRouteImport.update({
 const AuthenticatedSolverRoute = AuthenticatedSolverRouteImport.update({
   id: '/solver',
   path: '/solver',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSnapSolveRoute = AuthenticatedSnapSolveRouteImport.update({
+  id: '/snap-solve',
+  path: '/snap-solve',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
@@ -127,6 +134,11 @@ const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
   path: '/bookmarks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-planner': typeof AuthenticatedExamPlannerRoute
@@ -144,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
@@ -155,6 +169,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-planner': typeof AuthenticatedExamPlannerRoute
@@ -164,6 +179,7 @@ export interface FileRoutesByTo {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
@@ -177,6 +193,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/exam-planner': typeof AuthenticatedExamPlannerRoute
@@ -186,6 +203,7 @@ export interface FileRoutesById {
   '/_authenticated/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
+  '/_authenticated/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/_authenticated/solver': typeof AuthenticatedSolverRoute
   '/_authenticated/study': typeof AuthenticatedStudyRoute
   '/_authenticated/topics': typeof AuthenticatedTopicsRoute
@@ -199,6 +217,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/analytics'
     | '/bookmarks'
     | '/dashboard'
     | '/exam-planner'
@@ -208,6 +227,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/snap-solve'
     | '/solver'
     | '/study'
     | '/topics'
@@ -219,6 +239,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/analytics'
     | '/bookmarks'
     | '/dashboard'
     | '/exam-planner'
@@ -228,6 +249,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/snap-solve'
     | '/solver'
     | '/study'
     | '/topics'
@@ -240,6 +262,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/_authenticated/analytics'
     | '/_authenticated/bookmarks'
     | '/_authenticated/dashboard'
     | '/_authenticated/exam-planner'
@@ -249,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/paper-solver'
     | '/_authenticated/questions'
     | '/_authenticated/quiz'
+    | '/_authenticated/snap-solve'
     | '/_authenticated/solver'
     | '/_authenticated/study'
     | '/_authenticated/topics'
@@ -336,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolverRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/snap-solve': {
+      id: '/_authenticated/snap-solve'
+      path: '/snap-solve'
+      fullPath: '/snap-solve'
+      preLoaderRoute: typeof AuthenticatedSnapSolveRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/quiz': {
       id: '/_authenticated/quiz'
       path: '/quiz'
@@ -399,10 +430,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookmarksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExamPlannerRoute: typeof AuthenticatedExamPlannerRoute
@@ -412,12 +451,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPaperSolverRoute: typeof AuthenticatedPaperSolverRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
+  AuthenticatedSnapSolveRoute: typeof AuthenticatedSnapSolveRoute
   AuthenticatedSolverRoute: typeof AuthenticatedSolverRoute
   AuthenticatedStudyRoute: typeof AuthenticatedStudyRoute
   AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExamPlannerRoute: AuthenticatedExamPlannerRoute,
@@ -427,6 +468,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPaperSolverRoute: AuthenticatedPaperSolverRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
+  AuthenticatedSnapSolveRoute: AuthenticatedSnapSolveRoute,
   AuthenticatedSolverRoute: AuthenticatedSolverRoute,
   AuthenticatedStudyRoute: AuthenticatedStudyRoute,
   AuthenticatedTopicsRoute: AuthenticatedTopicsRoute,

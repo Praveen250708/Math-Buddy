@@ -196,3 +196,94 @@ export const getMyProfile = createServerFn({ method: "POST" })
     
     return { profile: data };
   });
+
+export const getQuizAttempts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("quiz_attempts")
+      .select("id, created_at, topic, score, total, details")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return { attempts: data ?? [] };
+  });
+
+export const savePracticeAttempt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        topic: z.string().trim().min(1).max(200),
+        correct: z.boolean(),
+        problem: z.string(),
+        solution: z.string(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const score = data.correct ? 1 : 0;
+    const total = 1;
+
+    // Save attempt
+    await supabase.from("quiz_attempts").insert({
+      user_id: userId,
+      topic: data.topic,
+      score,
+      total,
+      details: [
+        {
+          type: "snap-solve",
+          problem: data.problem,
+          solution: data.solution,
+          correct: data.correct,
+        },
+      ] as any,
+    });
+
+    // Update topic progress (upsert)
+    const { data: existing } = await supabase
+      .from("topic_progress")
+      .select("id, questions_attempted, questions_correct")
+      .eq("user_id", userId)
+      .eq("topic", data.topic)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("topic_progress")
+        .update({
+          questions_attempted: existing.questions_attempted + total,
+          questions_correct: existing.questions_correct + score,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("topic_progress").insert({
+        user_id: userId,
+        topic: data.topic,
+        questions_attempted: total,
+        questions_correct: score,
+      });
+    }
+
+    // Award points
+    const pts = score * 2 + (score === total ? 10 : 0);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("total_points")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile) {
+      await supabase
+        .from("profiles")
+        .update({ total_points: (profile.total_points ?? 0) + pts })
+        .eq("user_id", userId);
+    }
+
+    return { pointsAwarded: pts };
+  });
+

@@ -13,6 +13,8 @@ import {
   CalendarClock,
   Sigma,
   LineChart,
+  Camera,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +34,7 @@ const studyItems = [
   { to: "/formulas", label: "Formulas", icon: BookOpenText },
   { to: "/solver", label: "Solver", icon: Calculator },
   { to: "/paper-solver", label: "Paper Solver", icon: FileText },
+  { to: "/snap-solve", label: "Snap to Solve", icon: Camera },
   { to: "/graph-solver", label: "Graph & Diagram", icon: LineChart },
   { to: "/questions", label: "Questions", icon: Lightbulb },
   { to: "/quiz", label: "Quiz Mode", icon: Target },
@@ -39,6 +42,7 @@ const studyItems = [
 ] as const;
 
 const trackItems = [
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/topics", label: "Topics", icon: GitBranch },
   { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { to: "/exam-planner", label: "Exam Planner", icon: CalendarClock },

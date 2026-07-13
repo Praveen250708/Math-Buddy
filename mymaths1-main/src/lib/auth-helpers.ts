@@ -26,7 +26,7 @@ export const getClientSession = async () => {
             email: "guest.mathbuddy@gmail.com",
             user_metadata: { display_name: "Guest User" },
           },
-          access_token: "guest-token-123",
+          access_token: "mock-token",
           refresh_token: "guest-refresh-token",
         } as any,
       },
