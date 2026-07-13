@@ -1,0 +1,77 @@
+{
+  "profiles": [
+    {
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "display_name": "Guest",
+      "total_points": 28,
+      "current_streak": 2,
+      "longest_streak": 2,
+      "last_active_date": "2026-07-10",
+      "avatar_url": null
+    }
+  ],
+  "study_sessions": [
+    {
+      "id": "c0hgkrsgyfi-sc7cz9we31",
+      "created_at": "2026-07-09T13:52:22.958Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 25,
+      "topic": null,
+      "points_earned": 5
+    },
+    {
+      "id": "i3zf2s4wvn-3hbsrwdcuke",
+      "created_at": "2026-07-09T13:52:44.710Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 25,
+      "topic": null,
+      "points_earned": 5
+    },
+    {
+      "id": "eiv0jlhi96w-x9g3tzfuus",
+      "created_at": "2026-07-09T13:53:57.313Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 25,
+      "topic": null,
+      "points_earned": 5
+    },
+    {
+      "id": "f5320e1f-c1c5-4f6d-8832-f867f0951e93",
+      "created_at": "2026-07-09T13:55:05.431Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 25,
+      "topic": null,
+      "points_earned": 5,
+      "ended_at": "2026-07-09T13:55:06.619Z",
+      "distraction_count": 0,
+      "completed": false
+    },
+    {
+      "id": "dbca28b1-f82a-4a24-9a6b-8ec1c4d98bc8",
+      "created_at": "2026-07-09T13:55:11.884Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 120,
+      "topic": null,
+      "points_earned": 5,
+      "ended_at": "2026-07-09T13:55:14.348Z",
+      "distraction_count": 0,
+      "completed": false
+    },
+    {
+      "id": "42035f68-d11e-4f21-8dcc-cf59a50e28bc",
+      "created_at": "2026-07-09T15:21:26.278Z",
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "planned_minutes": 25,
+      "topic": null,
+      "points_earned": 3,
+      "ended_at": "2026-07-09T15:21:47.617Z",
+      "distraction_count": 1,
+      "completed": false
+    }
+  ],
+  "bookmarks": [],
+  "quiz_attempts": [],
+  "exams": [],
+  "topic_progress": [],
+  "achievements": []
+}
