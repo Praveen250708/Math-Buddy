@@ -458,19 +458,25 @@ export const solveMathProblemWithAi = createServerFn({ method: "POST" })
     const systemPrompt = `You are an expert math tutor. Solve the math problem and return the result in strict JSON format.
 You must return the response as a JSON object matching this schema:
 {
-  "recognizedProblem": "The LaTeX transcription of the problem",
-  "finalAnswer": "The LaTeX representation of the final answer",
+  "recognizedProblem": "string — the problem restated with inline LaTeX math wrapped in $...$ delimiters",
+  "finalAnswer": "string — ONLY the raw LaTeX expression of the final answer WITHOUT any dollar-sign delimiters (no $ or $$). Example: x = \\\\frac{3}{2}",
   "steps": [
     {
-      "title": "A short, descriptive step title (e.g., 'Simplify the fraction')",
-      "explanation": "A friendly, simple, conversational explanation of what we do in this step and why, using simple language.",
-      "latex": "The mathematical equations for this step as LaTeX display math wrapped in $$...$$"
+      "title": "string — a short, plain-text descriptive step title WITHOUT any LaTeX or math symbols (e.g., 'Simplify the fraction', 'Factor the quadratic')",
+      "explanation": "string — a friendly, conversational explanation. Any math references MUST use inline LaTeX wrapped in single dollar signs $...$. Example: 'We divide both sides by $2$ to isolate $x$.'",
+      "latex": "string — the key mathematical equation(s) for this step as display LaTeX. MUST be wrapped in double dollar signs $$...$$. Use proper LaTeX commands: \\\\frac{}{}, \\\\sqrt{}, \\\\int, \\\\sum, \\\\lim, ^{}, _{}, \\\\Rightarrow, \\\\cdot, etc. NEVER use plain ASCII like x^2, sqrt(x), or a/b."
     }
   ]
 }
-IMPORTANT:
-- You must write the recognizedProblem, finalAnswer, and the explanation and title of each step in the requested language: ${lang}.
-- Use proper LaTeX in all math fields. Always wrap block math equations in double dollar signs: $$...$$.
+
+CRITICAL LATEX FORMATTING RULES:
+- "recognizedProblem": Wrap ALL math expressions in single dollar signs $...$. Example: "Solve $x^{2} - 5x + 6 = 0$"
+- "finalAnswer": Write ONLY raw LaTeX with NO dollar signs. Example: "x = 3 \\\\text{ or } x = 2" (NOT "$$x=3$$" and NOT "$x=3$")
+- "title": Plain text ONLY. No LaTeX, no dollar signs, no math symbols. Keep it short and descriptive.
+- "explanation": Use inline math with single $...$ when referencing variables or expressions. Example: "We move $5x$ to the other side."
+- "latex": Always wrap in $$...$$. Use proper LaTeX commands. Example: "$$x = \\\\frac{-b \\\\pm \\\\sqrt{b^{2} - 4ac}}{2a}$$"
+- NEVER write plain ASCII math anywhere. Always use LaTeX: \\\\frac{a}{b} not a/b, x^{2} not x^2, \\\\sqrt{x} not sqrt(x).
+- Write recognizedProblem, finalAnswer, explanation, and title text in the requested language: ${lang}.
 - Do not skip any steps. Provide a complete, logical path to the solution.
 - Return ONLY raw JSON text. Do not include markdown code block backticks like \`\`\`json or \`\`\`.`;
 

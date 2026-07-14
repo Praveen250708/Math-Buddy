@@ -800,9 +800,9 @@ function SnapSolvePage() {
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="p-3 bg-muted/40 rounded-lg text-sm italic text-muted-foreground overflow-x-auto">
-                      <span className="font-bold not-italic text-foreground">Problem: </span>
-                      {solvedData.recognizedProblem}
+                    <div className="p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground overflow-x-auto">
+                      <span className="font-bold text-foreground">Problem: </span>
+                      <MarkdownView text={solvedData.recognizedProblem} />
                     </div>
 
                     <div className="pt-2 border-t border-border/60">
@@ -839,7 +839,7 @@ function SnapSolvePage() {
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold font-mono">
                               {idx + 1}
                             </div>
-                            <span className="font-display font-semibold text-sm text-foreground">{step.title}</span>
+                            <span className="font-display font-semibold text-sm text-foreground"><MarkdownView text={step.title} /></span>
                           </div>
                           {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                         </div>
@@ -896,7 +896,7 @@ function SnapSolvePage() {
                                 <div className="font-bold flex items-center gap-1 text-primary">
                                   <Eye className="h-3.5 w-3.5" /> Concept Breakdown
                                 </div>
-                                <p className="leading-relaxed">{step.explanation}</p>
+                                <div className="leading-relaxed"><MarkdownView text={step.explanation} /></div>
                               </div>
                             )}
                           </div>
