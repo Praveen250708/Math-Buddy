@@ -58,6 +58,7 @@ function SnapSolvePage() {
   // Camera capture states
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mobileCameraInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Cropping variables
@@ -130,6 +131,18 @@ function SnapSolvePage() {
 
   // Camera handling
   const startCamera = async () => {
+    // Check if secure context or mediaDevices are missing/disabled
+    const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    
+    if (!hasWebcam) {
+      if (mobileCameraInputRef.current) {
+        mobileCameraInputRef.current.click();
+      } else {
+        toast.error("Could not access camera on this connection. Please upload an image or type the problem manually.");
+      }
+      return;
+    }
+
     setIsCameraActive(true);
     setRawImage(null);
     setCroppedImage(null);
@@ -144,8 +157,14 @@ function SnapSolvePage() {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      toast.error("Could not access camera. Please upload an image or type the problem manually.");
-      setIsCameraActive(false);
+      // Fallback if getUserMedia fails (e.g. permission denied)
+      if (mobileCameraInputRef.current) {
+        toast.info("Opening system camera...");
+        mobileCameraInputRef.current.click();
+      } else {
+        toast.error("Could not access camera. Please upload an image or type the problem manually.");
+        setIsCameraActive(false);
+      }
     }
   };
 
@@ -516,6 +535,14 @@ function SnapSolvePage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment" 
+                      className="hidden" 
+                      ref={mobileCameraInputRef} 
+                      onChange={handleFileUpload} 
+                    />
                     <button 
                       onClick={startCamera}
                       className="group flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-primary/30 hover:border-primary/80 bg-card/40 hover:bg-primary/5 transition-all space-y-3 cursor-pointer"
