@@ -20,6 +20,7 @@ import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedStudyRouteImport } from './routes/_authenticated/study'
 import { Route as AuthenticatedSolverRouteImport } from './routes/_authenticated/solver'
 import { Route as AuthenticatedSnapSolveRouteImport } from './routes/_authenticated/snap-solve'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated/questions'
 import { Route as AuthenticatedPaperSolverRouteImport } from './routes/_authenticated/paper-solver'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedGraphSolverRouteImport } from './routes/_authenti
 import { Route as AuthenticatedFormulasRouteImport } from './routes/_authenticated/formulas'
 import { Route as AuthenticatedExamPlannerRouteImport } from './routes/_authenticated/exam-planner'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDailyChallengeRouteImport } from './routes/_authenticated/daily-challenge'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 
@@ -85,6 +87,11 @@ const AuthenticatedSnapSolveRoute = AuthenticatedSnapSolveRouteImport.update({
   path: '/snap-solve',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
   id: '/quiz',
   path: '/quiz',
@@ -129,6 +136,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDailyChallengeRoute =
+  AuthenticatedDailyChallengeRouteImport.update({
+    id: '/daily-challenge',
+    path: '/daily-challenge',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
@@ -149,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/daily-challenge': typeof AuthenticatedDailyChallengeRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-planner': typeof AuthenticatedExamPlannerRoute
   '/formulas': typeof AuthenticatedFormulasRoute
@@ -157,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
@@ -171,6 +186,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/daily-challenge': typeof AuthenticatedDailyChallengeRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-planner': typeof AuthenticatedExamPlannerRoute
   '/formulas': typeof AuthenticatedFormulasRoute
@@ -179,6 +195,7 @@ export interface FileRoutesByTo {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
@@ -195,6 +212,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/_authenticated/daily-challenge': typeof AuthenticatedDailyChallengeRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/exam-planner': typeof AuthenticatedExamPlannerRoute
   '/_authenticated/formulas': typeof AuthenticatedFormulasRoute
@@ -203,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/_authenticated/solver': typeof AuthenticatedSolverRoute
   '/_authenticated/study': typeof AuthenticatedStudyRoute
@@ -219,6 +238,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/analytics'
     | '/bookmarks'
+    | '/daily-challenge'
     | '/dashboard'
     | '/exam-planner'
     | '/formulas'
@@ -227,6 +247,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/review'
     | '/snap-solve'
     | '/solver'
     | '/study'
@@ -241,6 +262,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/analytics'
     | '/bookmarks'
+    | '/daily-challenge'
     | '/dashboard'
     | '/exam-planner'
     | '/formulas'
@@ -249,6 +271,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/review'
     | '/snap-solve'
     | '/solver'
     | '/study'
@@ -264,6 +287,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/analytics'
     | '/_authenticated/bookmarks'
+    | '/_authenticated/daily-challenge'
     | '/_authenticated/dashboard'
     | '/_authenticated/exam-planner'
     | '/_authenticated/formulas'
@@ -272,6 +296,7 @@ export interface FileRouteTypes {
     | '/_authenticated/paper-solver'
     | '/_authenticated/questions'
     | '/_authenticated/quiz'
+    | '/_authenticated/review'
     | '/_authenticated/snap-solve'
     | '/_authenticated/solver'
     | '/_authenticated/study'
@@ -367,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSnapSolveRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/quiz': {
       id: '/_authenticated/quiz'
       path: '/quiz'
@@ -423,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/daily-challenge': {
+      id: '/_authenticated/daily-challenge'
+      path: '/daily-challenge'
+      fullPath: '/daily-challenge'
+      preLoaderRoute: typeof AuthenticatedDailyChallengeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/bookmarks': {
       id: '/_authenticated/bookmarks'
       path: '/bookmarks'
@@ -443,6 +482,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
+  AuthenticatedDailyChallengeRoute: typeof AuthenticatedDailyChallengeRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExamPlannerRoute: typeof AuthenticatedExamPlannerRoute
   AuthenticatedFormulasRoute: typeof AuthenticatedFormulasRoute
@@ -451,6 +491,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPaperSolverRoute: typeof AuthenticatedPaperSolverRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSnapSolveRoute: typeof AuthenticatedSnapSolveRoute
   AuthenticatedSolverRoute: typeof AuthenticatedSolverRoute
   AuthenticatedStudyRoute: typeof AuthenticatedStudyRoute
@@ -460,6 +501,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
+  AuthenticatedDailyChallengeRoute: AuthenticatedDailyChallengeRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExamPlannerRoute: AuthenticatedExamPlannerRoute,
   AuthenticatedFormulasRoute: AuthenticatedFormulasRoute,
@@ -468,6 +510,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPaperSolverRoute: AuthenticatedPaperSolverRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSnapSolveRoute: AuthenticatedSnapSolveRoute,
   AuthenticatedSolverRoute: AuthenticatedSolverRoute,
   AuthenticatedStudyRoute: AuthenticatedStudyRoute,

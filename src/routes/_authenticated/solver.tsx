@@ -1,15 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Calculator, Loader2, Bookmark, Mic, MicOff, Play, Pause, Square, Volume2 } from "lucide-react";
+import { Calculator, Loader2, Bookmark, Mic, MicOff, Play, Pause, Square, Volume2, HelpCircle, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { solveStepByStep, getSpeechAudio } from "@/lib/ai.functions";
+import { solveStepByStep, getSpeechAudio, clarifyStep } from "@/lib/ai.functions";
 import { addBookmark } from "@/lib/bookmarks.functions";
 import { PageHeader, ResultPanel } from "./formulas";
 import { consumePrefilledTopic } from "@/lib/topic-prefill";
 import { VoiceOverlay } from "@/components/voice-overlay";
+import { MarkdownView } from "@/components/markdown-view";
 
 export const Route = createFileRoute("/_authenticated/solver")({
   component: SolverPage,
@@ -19,6 +20,7 @@ function SolverPage() {
   const fn = useServerFn(solveStepByStep);
   const bookmarkFn = useServerFn(addBookmark);
   const getSpeechAudioFn = useServerFn(getSpeechAudio);
+  const clarifyFn = useServerFn(clarifyStep);
   const [problem, setProblem] = useState("");
   const [image, setImage] = useState<{ mimeType: string; data: string } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -713,7 +715,382 @@ function SolverPage() {
         </div>
       )}
 
-      <ResultPanel loading={loading} content={content} emptyText="Drop a problem above to get a step-by-step solution." />
+      <StepByStepResult
+        loading={loading}
+        content={content}
+        problem={problem}
+        language={language}
+        clarifyFn={clarifyFn}
+      />
+    </div>
+  );
+}
+
+// ─── Step Parser ────────────────────────────────────────────────────────────
+// Parses the AI markdown into: preamble (Problem + Idea sections), steps, conclusion (Final Answer)
+
+type ParsedStep = {
+  heading: string;   // e.g. "Step 1: Move x terms..."
+  body: string;      // everything under that step
+};
+
+type ParsedSolution = {
+  preamble: string;  // ## Problem + ## Idea
+  steps: ParsedStep[];
+  conclusion: string; // ## Final Answer
+};
+
+function parseSolution(content: string): ParsedSolution {
+  // Split by ## headers
+  const sections = content.split(/(?=^## )/m).filter(Boolean);
+
+  let preamble = "";
+  const steps: ParsedStep[] = [];
+  let conclusion = "";
+  let inSteps = false;
+  let currentStep = "";
+  let currentHeading = "";
+
+  for (const section of sections) {
+    const header = section.match(/^## (.+)/m)?.[1]?.trim().toLowerCase() ?? "";
+
+    if (header === "steps") {
+      inSteps = true;
+      // Parse numbered steps inside this section
+      // Split by lines starting with a number followed by . or )
+      const lines = section.split("\n").slice(1); // skip "## Steps" line
+      let curHeading = "";
+      let curBody: string[] = [];
+
+      const flushStep = () => {
+        if (curHeading) {
+          steps.push({ heading: curHeading, body: curBody.join("\n").trim() });
+        }
+      };
+
+      for (const line of lines) {
+        const stepMatch = line.match(/^(\d+[\.\)]\s*.+)/);
+        if (stepMatch) {
+          flushStep();
+          curHeading = stepMatch[1].trim();
+          curBody = [];
+        } else {
+          if (curHeading) curBody.push(line);
+          else preamble += line + "\n"; // before any numbered step inside Steps section
+        }
+      }
+      flushStep();
+      continue;
+    }
+
+    if (header.includes("final answer") || header.includes("answer") || header.includes("conclusion")) {
+      conclusion += section;
+      inSteps = false;
+      continue;
+    }
+
+    if (!inSteps) {
+      preamble += section;
+    } else {
+      conclusion += section;
+    }
+  }
+
+  return { preamble: preamble.trim(), steps, conclusion: conclusion.trim() };
+}
+
+// ─── ConfusedChat ────────────────────────────────────────────────────────────
+// Multi-turn tutoring conversation. The AI always ends with a question back
+// to the student, creating a real mentor ↔ student dialogue.
+
+type ChatMessage = {
+  role: "student" | "tutor";
+  message: string;
+};
+
+type ConfusedChatProps = {
+  stepHeading: string;
+  stepBody: string;
+  problem: string;
+  language: string;
+  clarifyFn: any;
+};
+
+function ConfusedChat({ stepHeading, stepBody, problem, language, clarifyFn }: ConfusedChatProps) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom whenever a new message arrives
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [history, loading, open]);
+
+  const handleOpen = () => {
+    setOpen((o) => !o);
+    if (!open) setTimeout(() => textareaRef.current?.focus(), 80);
+  };
+
+  const handleSend = async () => {
+    const msg = input.trim();
+    if (!msg || loading) return;
+
+    // Append student message immediately
+    const updatedHistory: ChatMessage[] = [...history, { role: "student", message: msg }];
+    setHistory(updatedHistory);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const stepContent = `${stepHeading}\n${stepBody}`;
+      const res = await clarifyFn({
+        data: {
+          problem,
+          stepContent,
+          conversationHistory: updatedHistory,
+          language,
+        },
+      });
+      // Append tutor reply
+      setHistory((prev) => [...prev, { role: "tutor", message: res.content }]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not reach the AI tutor.");
+      // Roll back the student message so they can retry
+      setHistory(history);
+      setInput(msg);
+    } finally {
+      setLoading(false);
+      setTimeout(() => textareaRef.current?.focus(), 80);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleReset = () => {
+    setHistory([]);
+    setInput("");
+  };
+
+  return (
+    <div className="mt-3">
+      {/* ── Trigger pill ── */}
+      <button
+        onClick={handleOpen}
+        className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
+          open
+            ? "border-amber-400/60 bg-amber-400/10 text-amber-400"
+            : "border-amber-500/30 bg-amber-500/5 text-amber-400/80 hover:border-amber-400/60 hover:bg-amber-400/10 hover:text-amber-400"
+        }`}
+      >
+        <HelpCircle className="h-3.5 w-3.5" />
+        Confused?
+        {open ? <ChevronUp className="h-3 w-3 opacity-60" /> : <ChevronDown className="h-3 w-3 opacity-60" />}
+      </button>
+
+      {/* ── Chat panel ── */}
+      {open && (
+        <div className="mt-2 rounded-xl border border-amber-400/25 bg-amber-400/5 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-400/15 bg-amber-400/8">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+                <span className="text-[10px]">🎓</span>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-amber-400">AI Math Mentor</div>
+                <div className="text-[10px] text-amber-400/60">Ask about this step — I'll guide you through it</div>
+              </div>
+            </div>
+            {history.length > 0 && (
+              <button
+                onClick={handleReset}
+                className="text-[10px] text-amber-400/50 hover:text-amber-400 transition-colors"
+              >
+                Reset chat
+              </button>
+            )}
+          </div>
+
+          {/* ── Message thread ── */}
+          <div className="max-h-72 overflow-y-auto px-4 py-3 space-y-3">
+            {/* Empty state prompt */}
+            {history.length === 0 && !loading && (
+              <div className="text-center py-4">
+                <p className="text-xs text-amber-400/60 font-medium">
+                  What's confusing you about this step?
+                </p>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">
+                  I'll explain it a different way and ask you a question to check your understanding.
+                </p>
+              </div>
+            )}
+
+            {/* Messages */}
+            {history.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex gap-2 ${msg.role === "student" ? "flex-row-reverse" : "flex-row"}`}
+              >
+                {/* Avatar */}
+                <div
+                  className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] shrink-0 ${
+                    msg.role === "student"
+                      ? "bg-primary/20 text-primary"
+                      : "bg-amber-500/20 text-amber-400"
+                  }`}
+                >
+                  {msg.role === "student" ? "👤" : "🎓"}
+                </div>
+
+                {/* Bubble */}
+                <div
+                  className={`max-w-[82%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                    msg.role === "student"
+                      ? "bg-primary/15 text-foreground rounded-tr-sm"
+                      : "bg-background/70 border border-amber-400/15 text-foreground rounded-tl-sm"
+                  }`}
+                >
+                  {msg.role === "tutor" ? (
+                    <MarkdownView text={msg.message} />
+                  ) : (
+                    <p>{msg.message}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {loading && (
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] shrink-0">
+                  🎓
+                </div>
+                <div className="bg-background/70 border border-amber-400/15 rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60 animate-bounce [animation-delay:0ms]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60 animate-bounce [animation-delay:150ms]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60 animate-bounce [animation-delay:300ms]" />
+                </div>
+              </div>
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+
+          {/* ── Input bar ── */}
+          <div className="border-t border-amber-400/15 bg-background/30 px-3 py-2.5 flex gap-2">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                history.length === 0
+                  ? "e.g. Why did we multiply both sides?"
+                  : "Reply to the tutor…"
+              }
+              rows={1}
+              className="flex-1 rounded-lg border border-amber-400/20 bg-background/60 px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-amber-400/50 resize-none"
+            />
+            <Button
+              size="sm"
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="h-auto bg-amber-500 hover:bg-amber-500/90 text-white shrink-0 px-3 py-1.5"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+
+          <p className="px-3 pb-2 text-[9px] text-muted-foreground/30 text-center">
+            Enter to send · Shift+Enter for new line
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── StepByStepResult ───────────────────────────────────────────────────────
+// Renders parsed solution with per-step "Confused?" buttons.
+// Falls back to plain ResultPanel if parsing finds no steps.
+
+type StepByStepResultProps = {
+  loading: boolean;
+  content: string;
+  problem: string;
+  language: string;
+  clarifyFn: any;
+};
+
+function StepByStepResult({ loading, content, problem, language, clarifyFn }: StepByStepResultProps) {
+  if (loading || !content) {
+    return <ResultPanel loading={loading} content={content} emptyText="Drop a problem above to get a step-by-step solution." />;
+  }
+
+  const { preamble, steps, conclusion } = parseSolution(content);
+
+  // If we couldn't parse any steps, fall back to plain renderer
+  if (steps.length === 0) {
+    return <ResultPanel loading={false} content={content} emptyText="" />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Problem + Idea preamble */}
+      {preamble && (
+        <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
+          <MarkdownView text={preamble} />
+        </div>
+      )}
+
+      {/* Steps */}
+      {steps.map((step, idx) => (
+        <div
+          key={idx}
+          className="rounded-2xl border border-border bg-gradient-card p-5 shadow-card"
+        >
+          {/* Step header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs font-bold text-primary/70 uppercase tracking-wider mb-1">Step {idx + 1}</div>
+              <div className="font-display font-semibold text-foreground">
+                {step.heading.replace(/^\d+[\.\)]\s*/, "")}
+              </div>
+            </div>
+          </div>
+
+          {/* Step body */}
+          {step.body && (
+            <div className="mt-3 text-sm">
+              <MarkdownView text={step.body} />
+            </div>
+          )}
+
+          {/* Confused? button + inline chat */}
+          <ConfusedChat
+            stepHeading={step.heading}
+            stepBody={step.body}
+            problem={problem}
+            language={language}
+            clarifyFn={clarifyFn}
+          />
+        </div>
+      ))}
+
+      {/* Final Answer */}
+      {conclusion && (
+        <div className="rounded-2xl border border-success/30 bg-success/5 p-6 shadow-card">
+          <MarkdownView text={conclusion} />
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateQuiz, type QuizQuestion } from "@/lib/ai.functions";
 import { submitQuiz } from "@/lib/gamification.functions";
+import { addMissedQuestion } from "@/lib/review.functions";
 import { MarkdownView } from "@/components/markdown-view";
 import { PageHeader } from "./formulas";
 import { consumePrefilledTopic } from "@/lib/topic-prefill";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/quiz")({
 function QuizPage() {
   const genFn = useServerFn(generateQuiz);
   const submitFn = useServerFn(submitQuiz);
+  const addMissedFn = useServerFn(addMissedQuestion);
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "mixed">("mixed");
@@ -62,6 +64,24 @@ function QuizPage() {
         },
       });
       setPointsAwarded(r.pointsAwarded);
+
+      // Save missed questions to spaced repetition queue
+      const missedSaves = questions
+        .map((q, i) => ({ q, i }))
+        .filter(({ q, i }) => answers[i] !== q.answer)
+        .map(({ q }) =>
+          addMissedFn({
+            data: {
+              topic: activeTopic,
+              question: q.q,
+              options: q.options,
+              answer: q.answer,
+              explanation: q.explanation,
+            },
+          }).catch(() => {}), // fire-and-forget, don't block result
+        );
+      await Promise.allSettled(missedSaves);
+
       setStage("result");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");

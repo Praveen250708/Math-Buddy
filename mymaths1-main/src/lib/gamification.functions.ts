@@ -27,21 +27,42 @@ export const pingStreak = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("current_streak, longest_streak, last_active_date, total_points")
+      .select("current_streak, longest_streak, last_active_date, total_points, streak_freezes")
       .eq("user_id", userId)
       .maybeSingle();
-    if (!profile) return { current_streak: 0, longest_streak: 0 };
+    if (!profile) return { current_streak: 0, longest_streak: 0, streak_freezes: 2 };
 
     if (profile.last_active_date === today) {
       return {
         current_streak: profile.current_streak,
         longest_streak: profile.longest_streak,
+        streak_freezes: profile.streak_freezes ?? 2,
       };
     }
 
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const newStreak =
-      profile.last_active_date === yesterday ? profile.current_streak + 1 : 1;
+    const lastDate = profile.last_active_date;
+    const daysMissed = lastDate
+      ? Math.round((new Date(today).getTime() - new Date(lastDate).getTime()) / 86_400_000)
+      : 999;
+
+    let newStreak: number;
+    let newFreezes = profile.streak_freezes ?? 2;
+    let freezeUsed = false;
+
+    if (daysMissed === 1) {
+      // Active yesterday — extend streak normally
+      newStreak = profile.current_streak + 1;
+    } else if (daysMissed === 2 && newFreezes > 0) {
+      // Missed exactly 1 day — consume a freeze token to keep streak
+      newStreak = profile.current_streak + 1;
+      newFreezes -= 1;
+      freezeUsed = true;
+    } else {
+      // Missed too many days or no freezes left — reset
+      newStreak = 1;
+    }
+
     const newLongest = Math.max(profile.longest_streak ?? 0, newStreak);
 
     await supabase
@@ -50,6 +71,7 @@ export const pingStreak = createServerFn({ method: "POST" })
         current_streak: newStreak,
         longest_streak: newLongest,
         last_active_date: today,
+        streak_freezes: newFreezes,
       })
       .eq("user_id", userId);
 
@@ -58,7 +80,7 @@ export const pingStreak = createServerFn({ method: "POST" })
     if (newStreak >= 30) await maybeAward(supabase, userId, "streak_30");
     if ((profile.total_points ?? 0) >= 100) await maybeAward(supabase, userId, "points_100");
 
-    return { current_streak: newStreak, longest_streak: newLongest };
+    return { current_streak: newStreak, longest_streak: newLongest, streak_freezes: newFreezes, freeze_used: freezeUsed };
   });
 
 export const submitQuiz = createServerFn({ method: "POST" })
@@ -150,6 +172,60 @@ export const getAchievements = createServerFn({ method: "POST" })
       .select("code, earned_at")
       .eq("user_id", userId);
     return { achievements: data ?? [] };
+  });
+
+export const getStreakFreezes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("profiles")
+      .select("streak_freezes")
+      .eq("user_id", userId)
+      .maybeSingle();
+    return { streak_freezes: data?.streak_freezes ?? 2 };
+  });
+
+export const getWeeklyLeaderboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    // Get start of current ISO week (Monday)
+    const now = new Date();
+    const day = now.getUTCDay(); // 0 = Sunday
+    const daysToMonday = day === 0 ? 6 : day - 1;
+    const monday = new Date(now);
+    monday.setUTCDate(now.getUTCDate() - daysToMonday);
+    monday.setUTCHours(0, 0, 0, 0);
+    const weekStart = monday.toISOString();
+
+    // Sum quiz_attempts score for the week per user, join with profiles for display_name
+    const { data: attempts } = await supabase
+      .from("quiz_attempts")
+      .select("user_id, score")
+      .gte("created_at", weekStart);
+
+    if (!attempts || attempts.length === 0) return { leaders: [], me: userId };
+
+    // Aggregate per user
+    const totals: Record<string, number> = {};
+    for (const a of attempts) {
+      totals[a.user_id] = (totals[a.user_id] ?? 0) + a.score;
+    }
+
+    // Fetch profile info for each user
+    const userIds = Object.keys(totals);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, avatar_url, current_streak")
+      .in("user_id", userIds);
+
+    const leaders = (profiles ?? []).map((p: any) => ({
+      ...p,
+      weekly_points: totals[p.user_id] ?? 0,
+    })).sort((a: any, b: any) => b.weekly_points - a.weekly_points).slice(0, 10);
+
+    return { leaders, me: userId };
   });
 
 export const getTopicProgress = createServerFn({ method: "POST" })

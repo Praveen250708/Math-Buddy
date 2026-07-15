@@ -19,7 +19,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { GlobalSearch } from "@/components/global-search";
 import { Footer } from "@/components/footer";
 import { useServerFn } from "@tanstack/react-start";
-import { pingStreak, getMyProfile } from "@/lib/gamification.functions";
+import { pingStreak, getMyProfile, getStreakFreezes } from "@/lib/gamification.functions";
 import { getClientUser } from "@/lib/auth-helpers";
 import { generateProjectZip } from "@/lib/ai.functions";
 
@@ -37,9 +37,11 @@ function AuthLayout() {
   const navigate = useNavigate();
   const ping = useServerFn(pingStreak);
   const getProfileFn = useServerFn(getMyProfile);
+  const getFreezeFn = useServerFn(getStreakFreezes);
   const generateZipFn = useServerFn(generateProjectZip);
   const [points, setPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState<number>(0);
+  const [streakFreezes, setStreakFreezes] = useState<number>(2);
   const [downloading, setDownloading] = useState(false);
 
   const onDownloadZip = async () => {
@@ -69,7 +71,15 @@ function AuthLayout() {
       // Update streak on every authenticated session entry
       try {
         const s = await ping({});
-        if (active) setStreak(s.current_streak);
+        if (active) {
+          setStreak(s.current_streak);
+          if (typeof s.streak_freezes === 'number') setStreakFreezes(s.streak_freezes);
+          if (s.freeze_used) {
+            // dynamically import toast here to avoid circular deps
+            const { toast } = await import("sonner");
+            toast.info("❄️ Streak freeze used! Your streak is preserved.");
+          }
+        }
       } catch {}
       
       try {
@@ -79,11 +89,16 @@ function AuthLayout() {
           setStreak(res.profile.current_streak);
         }
       } catch {}
+
+      try {
+        const fRes = await getFreezeFn({});
+        if (active) setStreakFreezes(fRes.streak_freezes);
+      } catch {}
     })();
     return () => {
       active = false;
     };
-  }, [ping, getProfileFn]);
+  }, [ping, getProfileFn, getFreezeFn]);
 
   const onLogout = async () => {
     localStorage.removeItem("guest-login");
@@ -111,6 +126,16 @@ function AuthLayout() {
                 <Flame className="h-3.5 w-3.5 text-accent" />
                 <span className="font-mono">{streak}</span>
                 <span className="text-muted-foreground">day</span>
+                {/* Streak Freeze indicators */}
+                {[0, 1].map((i) => (
+                  <span
+                    key={i}
+                    title={i < streakFreezes ? "Streak freeze available" : "Streak freeze used"}
+                    className={`text-xs transition-opacity ${i < streakFreezes ? 'opacity-100' : 'opacity-25'}`}
+                  >
+                    🧊
+                  </span>
+                ))}
               </div>
               <div className="hidden items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium sm:flex">
                 <Trophy className="h-3.5 w-3.5 text-accent" />

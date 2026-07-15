@@ -15,6 +15,7 @@ import {
   LineChart,
   Camera,
   BarChart3,
+  RotateCcw,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const studyItems = [
   { to: "/graph-solver", label: "Graph & Diagram", icon: LineChart },
   { to: "/questions", label: "Questions", icon: Lightbulb },
   { to: "/quiz", label: "Quiz Mode", icon: Target },
+  { to: "/review", label: "Review Mistakes", icon: RotateCcw },
   { to: "/study", label: "Focus Timer", icon: Timer },
 ] as const;
 

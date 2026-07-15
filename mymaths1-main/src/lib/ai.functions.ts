@@ -151,6 +151,62 @@ No greetings, no filler, no "let's", no "certainly".`;
     return { content };
   });
 
+export const clarifyStep = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        problem: z.string().trim().max(2000),
+        stepContent: z.string().trim().max(3000),
+        conversationHistory: z
+          .array(
+            z.object({
+              role: z.enum(["student", "tutor"]),
+              message: z.string().trim().max(2000),
+            }),
+          )
+          .max(20),
+        language: z.string().trim().optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const lang = data.language || "English";
+
+    // Build a readable conversation string for the AI
+    const historyText = data.conversationHistory
+      .map((m) => `${m.role === "student" ? "Student" : "Tutor"}: ${m.message}`)
+      .join("\n");
+
+    const systemPrompt = `You are an encouraging, patient AI math mentor tutoring a student one-on-one.
+The student is solving this problem: """${data.problem}"""
+
+The specific step they are confused about:
+"""${data.stepContent}"""
+
+Conversation so far:
+${historyText || "(no prior conversation)"}
+
+Your role as a tutor:
+1. In your FIRST response: Acknowledge their confusion warmly (1 sentence), then re-explain ONLY this step clearly — use a simpler analogy, sub-steps, or a concrete example. Answer their exact question. Show math if helpful.
+2. In follow-up responses: Respond to what the student just said — affirm correct thinking, gently correct mistakes, or dig deeper. Build on the conversation.
+3. ALWAYS end every response with a short tutor question directed at the student — this is critical. The question should check their understanding or guide them to think. Examples:
+   - "Does that make sense now — can you tell me in your own words what we did?"
+   - "What do you think the next step would be after this?"
+   - "Try applying this idea: if x was 3 instead, what would the result be?"
+   - "Which part still feels unclear to you?"
+4. Keep the whole response under 130 words.
+5. Use LaTeX for all math: inline in $...$, display in $$...$$.
+6. Write entirely in ${lang}.
+7. Never say "Great question!" or "Certainly!". Be warm but direct.`;
+
+    const lastStudentMsg = data.conversationHistory
+      .filter((m) => m.role === "student")
+      .at(-1)?.message ?? "Please help me understand this step.";
+
+    const content = await callAI(systemPrompt, `Student: ${lastStudentMsg}`);
+    return { content };
+  });
+
 export const getImportantQuestions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z

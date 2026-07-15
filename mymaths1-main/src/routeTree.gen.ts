@@ -20,6 +20,7 @@ import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedStudyRouteImport } from './routes/_authenticated/study'
 import { Route as AuthenticatedSolverRouteImport } from './routes/_authenticated/solver'
 import { Route as AuthenticatedSnapSolveRouteImport } from './routes/_authenticated/snap-solve'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated/questions'
 import { Route as AuthenticatedPaperSolverRouteImport } from './routes/_authenticated/paper-solver'
@@ -83,6 +84,11 @@ const AuthenticatedSolverRoute = AuthenticatedSolverRouteImport.update({
 const AuthenticatedSnapSolveRoute = AuthenticatedSnapSolveRouteImport.update({
   id: '/snap-solve',
   path: '/snap-solve',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/_authenticated/paper-solver': typeof AuthenticatedPaperSolverRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/_authenticated/solver': typeof AuthenticatedSolverRoute
   '/_authenticated/study': typeof AuthenticatedStudyRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/review'
     | '/snap-solve'
     | '/solver'
     | '/study'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/paper-solver'
     | '/questions'
     | '/quiz'
+    | '/review'
     | '/snap-solve'
     | '/solver'
     | '/study'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/_authenticated/paper-solver'
     | '/_authenticated/questions'
     | '/_authenticated/quiz'
+    | '/_authenticated/review'
     | '/_authenticated/snap-solve'
     | '/_authenticated/solver'
     | '/_authenticated/study'
@@ -367,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSnapSolveRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/quiz': {
       id: '/_authenticated/quiz'
       path: '/quiz'
@@ -451,6 +470,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPaperSolverRoute: typeof AuthenticatedPaperSolverRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSnapSolveRoute: typeof AuthenticatedSnapSolveRoute
   AuthenticatedSolverRoute: typeof AuthenticatedSolverRoute
   AuthenticatedStudyRoute: typeof AuthenticatedStudyRoute
@@ -468,6 +488,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPaperSolverRoute: AuthenticatedPaperSolverRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSnapSolveRoute: AuthenticatedSnapSolveRoute,
   AuthenticatedSolverRoute: AuthenticatedSolverRoute,
   AuthenticatedStudyRoute: AuthenticatedStudyRoute,

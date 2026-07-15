@@ -151,6 +151,62 @@ No greetings, no filler, no "let's", no "certainly".`;
     return { content };
   });
 
+export const clarifyStep = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        problem: z.string().trim().max(2000),
+        stepContent: z.string().trim().max(3000),
+        conversationHistory: z
+          .array(
+            z.object({
+              role: z.enum(["student", "tutor"]),
+              message: z.string().trim().max(2000),
+            }),
+          )
+          .max(20),
+        language: z.string().trim().optional().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const lang = data.language || "English";
+
+    // Build a readable conversation string for the AI
+    const historyText = data.conversationHistory
+      .map((m) => `${m.role === "student" ? "Student" : "Tutor"}: ${m.message}`)
+      .join("\n");
+
+    const systemPrompt = `You are an encouraging, patient AI math mentor tutoring a student one-on-one.
+The student is solving this problem: """${data.problem}"""
+
+The specific step they are confused about:
+"""${data.stepContent}"""
+
+Conversation so far:
+${historyText || "(no prior conversation)"}
+
+Your role as a tutor:
+1. In your FIRST response: Acknowledge their confusion warmly (1 sentence), then re-explain ONLY this step clearly — use a simpler analogy, sub-steps, or a concrete example. Answer their exact question. Show math if helpful.
+2. In follow-up responses: Respond to what the student just said — affirm correct thinking, gently correct mistakes, or dig deeper. Build on the conversation.
+3. ALWAYS end every response with a short tutor question directed at the student — this is critical. The question should check their understanding or guide them to think. Examples:
+   - "Does that make sense now — can you tell me in your own words what we did?"
+   - "What do you think the next step would be after this?"
+   - "Try applying this idea: if x was 3 instead, what would the result be?"
+   - "Which part still feels unclear to you?"
+4. Keep the whole response under 130 words.
+5. Use LaTeX for all math: inline in $...$, display in $$...$$.
+6. Write entirely in ${lang}.
+7. Never say "Great question!" or "Certainly!". Be warm but direct.`;
+
+    const lastStudentMsg = data.conversationHistory
+      .filter((m) => m.role === "student")
+      .at(-1)?.message ?? "Please help me understand this step.";
+
+    const content = await callAI(systemPrompt, `Student: ${lastStudentMsg}`);
+    return { content };
+  });
+
 export const getImportantQuestions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
@@ -458,19 +514,25 @@ export const solveMathProblemWithAi = createServerFn({ method: "POST" })
     const systemPrompt = `You are an expert math tutor. Solve the math problem and return the result in strict JSON format.
 You must return the response as a JSON object matching this schema:
 {
-  "recognizedProblem": "The LaTeX transcription of the problem",
-  "finalAnswer": "The LaTeX representation of the final answer",
+  "recognizedProblem": "string — the problem restated with inline LaTeX math wrapped in $...$ delimiters",
+  "finalAnswer": "string — ONLY the raw LaTeX expression of the final answer WITHOUT any dollar-sign delimiters (no $ or $$). Example: x = \\\\frac{3}{2}",
   "steps": [
     {
-      "title": "A short, descriptive step title (e.g., 'Simplify the fraction')",
-      "explanation": "A friendly, simple, conversational explanation of what we do in this step and why, using simple language.",
-      "latex": "The mathematical equations for this step as LaTeX display math wrapped in $$...$$"
+      "title": "string — a short, plain-text descriptive step title WITHOUT any LaTeX or math symbols (e.g., 'Simplify the fraction', 'Factor the quadratic')",
+      "explanation": "string — a friendly, conversational explanation. Any math references MUST use inline LaTeX wrapped in single dollar signs $...$. Example: 'We divide both sides by $2$ to isolate $x$.'",
+      "latex": "string — the key mathematical equation(s) for this step as display LaTeX. MUST be wrapped in double dollar signs $$...$$. Use proper LaTeX commands: \\\\frac{}{}, \\\\sqrt{}, \\\\int, \\\\sum, \\\\lim, ^{}, _{}, \\\\Rightarrow, \\\\cdot, etc. NEVER use plain ASCII like x^2, sqrt(x), or a/b."
     }
   ]
 }
-IMPORTANT:
-- You must write the recognizedProblem, finalAnswer, and the explanation and title of each step in the requested language: ${lang}.
-- Use proper LaTeX in all math fields. Always wrap block math equations in double dollar signs: $$...$$.
+
+CRITICAL LATEX FORMATTING RULES:
+- "recognizedProblem": Wrap ALL math expressions in single dollar signs $...$. Example: "Solve $x^{2} - 5x + 6 = 0$"
+- "finalAnswer": Write ONLY raw LaTeX with NO dollar signs. Example: "x = 3 \\\\text{ or } x = 2" (NOT "$$x=3$$" and NOT "$x=3$")
+- "title": Plain text ONLY. No LaTeX, no dollar signs, no math symbols. Keep it short and descriptive.
+- "explanation": Use inline math with single $...$ when referencing variables or expressions. Example: "We move $5x$ to the other side."
+- "latex": Always wrap in $$...$$. Use proper LaTeX commands. Example: "$$x = \\\\frac{-b \\\\pm \\\\sqrt{b^{2} - 4ac}}{2a}$$"
+- NEVER write plain ASCII math anywhere. Always use LaTeX: \\\\frac{a}{b} not a/b, x^{2} not x^2, \\\\sqrt{x} not sqrt(x).
+- Write recognizedProblem, finalAnswer, explanation, and title text in the requested language: ${lang}.
 - Do not skip any steps. Provide a complete, logical path to the solution.
 - Return ONLY raw JSON text. Do not include markdown code block backticks like \`\`\`json or \`\`\`.`;
 
@@ -488,6 +550,81 @@ IMPORTANT:
       throw new Error("Failed to generate a valid step-by-step solution. Please try again.");
     }
   });
+
+
+export const evaluateDailyChallengeAnswer = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        problem: z.string().trim().min(1),
+        userAnswer: z.string().trim().min(1),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const systemPrompt = `You are an expert college math tutor. You are evaluating a student's answer to the daily math challenge.
+Determine if the student's answer is mathematically correct for the given problem.
+Be lenient with formats (e.g. 1/2, 0.5, or 2/4 are all correct for a half; x^2 + x, x(x+1) are both correct for the same expression).
+However, be mathematically strict on correctness.
+Return ONLY a raw JSON object matching this schema:
+{
+  "isCorrect": boolean,
+  "feedback": "A short (1-2 sentences), friendly, encouraging explanation in Markdown. If correct, congratulate them enthusiastically. If incorrect, explain why, point out possible common mistakes, but DO NOT reveal the final step-by-step solution yet."
+}
+Do not wrap your output in markdown fences (like \`\`\`json).`;
+
+    const userPrompt = `Problem: ${data.problem}\nStudent's Answer: ${data.userAnswer}`;
+    const response = await callAI(systemPrompt, userPrompt, true);
+    try {
+      return JSON.parse(response) as { isCorrect: boolean; feedback: string };
+    } catch (err) {
+      console.error("Failed to parse evaluation response:", response);
+      const isCorrectFallback = response.toLowerCase().includes("true") || response.toLowerCase().includes('"iscorrect": true') || response.toLowerCase().includes("correct");
+      return {
+        isCorrect: isCorrectFallback,
+        feedback: "We reviewed your answer. " + (isCorrectFallback ? "Great job, that's correct!" : "That's not quite right. Check your steps and try again!")
+      };
+    }
+  });
+
+export const askChallengeDoubt = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        problem: z.string().trim().min(1),
+        solution: z.string().trim().optional().nullable(),
+        doubt: z.string().trim().min(1),
+        chatHistory: z
+          .array(
+            z.object({
+              role: z.enum(["user", "model"]),
+              text: z.string(),
+            }),
+          )
+          .optional()
+          .nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const historyText = data.chatHistory
+      ?.map((msg) => `${msg.role === "user" ? "Student" : "Tutor"}: ${msg.text}`)
+      .join("\n") || "";
+
+    const systemPrompt = `You are a friendly, encouraging, and clear college-level math tutor.
+The student has a doubt about the daily challenge problem or its step-by-step solution.
+Analyze the problem, the solution (if revealed), and the conversation history. Answer their doubt clearly, keeping the tone active, friendly, and tutoring-oriented.
+Help them understand the mathematical logic behind the steps. Use LaTeX ($...$ for inline, $$...$$ for display) for all mathematical expressions. Keep the response concise (under 150 words).`;
+
+    const userPrompt = `Problem: ${data.problem}
+${data.solution ? `Solution:\n${data.solution}` : ""}
+${historyText ? `Conversation History:\n${historyText}` : ""}
+Student's current doubt: ${data.doubt}`;
+
+    const content = await callAI(systemPrompt, userPrompt, false);
+    return { content };
+  });
+
 
 
 

@@ -58,6 +58,7 @@ function SnapSolvePage() {
   // Camera capture states
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mobileCameraInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Cropping variables
@@ -130,6 +131,18 @@ function SnapSolvePage() {
 
   // Camera handling
   const startCamera = async () => {
+    // Check if secure context or mediaDevices are missing/disabled
+    const hasWebcam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    
+    if (!hasWebcam) {
+      if (mobileCameraInputRef.current) {
+        mobileCameraInputRef.current.click();
+      } else {
+        toast.error("Could not access camera on this connection. Please upload an image or type the problem manually.");
+      }
+      return;
+    }
+
     setIsCameraActive(true);
     setRawImage(null);
     setCroppedImage(null);
@@ -144,8 +157,14 @@ function SnapSolvePage() {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      toast.error("Could not access camera. Please upload an image or type the problem manually.");
-      setIsCameraActive(false);
+      // Fallback if getUserMedia fails (e.g. permission denied)
+      if (mobileCameraInputRef.current) {
+        toast.info("Opening system camera...");
+        mobileCameraInputRef.current.click();
+      } else {
+        toast.error("Could not access camera. Please upload an image or type the problem manually.");
+        setIsCameraActive(false);
+      }
     }
   };
 
@@ -516,6 +535,14 @@ function SnapSolvePage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment" 
+                      className="hidden" 
+                      ref={mobileCameraInputRef} 
+                      onChange={handleFileUpload} 
+                    />
                     <button 
                       onClick={startCamera}
                       className="group flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-primary/30 hover:border-primary/80 bg-card/40 hover:bg-primary/5 transition-all space-y-3 cursor-pointer"
@@ -773,9 +800,9 @@ function SnapSolvePage() {
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="p-3 bg-muted/40 rounded-lg text-sm italic text-muted-foreground overflow-x-auto">
-                      <span className="font-bold not-italic text-foreground">Problem: </span>
-                      {solvedData.recognizedProblem}
+                    <div className="p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground overflow-x-auto">
+                      <span className="font-bold text-foreground">Problem: </span>
+                      <MarkdownView text={solvedData.recognizedProblem} />
                     </div>
 
                     <div className="pt-2 border-t border-border/60">
@@ -812,7 +839,7 @@ function SnapSolvePage() {
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary text-xs font-bold font-mono">
                               {idx + 1}
                             </div>
-                            <span className="font-display font-semibold text-sm text-foreground">{step.title}</span>
+                            <span className="font-display font-semibold text-sm text-foreground"><MarkdownView text={step.title} /></span>
                           </div>
                           {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                         </div>
@@ -869,7 +896,7 @@ function SnapSolvePage() {
                                 <div className="font-bold flex items-center gap-1 text-primary">
                                   <Eye className="h-3.5 w-3.5" /> Concept Breakdown
                                 </div>
-                                <p className="leading-relaxed">{step.explanation}</p>
+                                <div className="leading-relaxed"><MarkdownView text={step.explanation} /></div>
                               </div>
                             )}
                           </div>
