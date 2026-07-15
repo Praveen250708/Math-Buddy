@@ -16,6 +16,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVoiceTutorRouteImport } from './routes/_authenticated/voice-tutor'
 import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated/topics'
 import { Route as AuthenticatedStudyRouteImport } from './routes/_authenticated/study'
 import { Route as AuthenticatedSolverRouteImport } from './routes/_authenticated/solver'
@@ -66,6 +67,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVoiceTutorRoute = AuthenticatedVoiceTutorRouteImport.update({
+  id: '/voice-tutor',
+  path: '/voice-tutor',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTopicsRoute = AuthenticatedTopicsRouteImport.update({
   id: '/topics',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
+  '/voice-tutor': typeof AuthenticatedVoiceTutorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/solver': typeof AuthenticatedSolverRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
+  '/voice-tutor': typeof AuthenticatedVoiceTutorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/solver': typeof AuthenticatedSolverRoute
   '/_authenticated/study': typeof AuthenticatedStudyRoute
   '/_authenticated/topics': typeof AuthenticatedTopicsRoute
+  '/_authenticated/voice-tutor': typeof AuthenticatedVoiceTutorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/solver'
     | '/study'
     | '/topics'
+    | '/voice-tutor'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/solver'
     | '/study'
     | '/topics'
+    | '/voice-tutor'
   id:
     | '__root__'
     | '/'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solver'
     | '/_authenticated/study'
     | '/_authenticated/topics'
+    | '/_authenticated/voice-tutor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/voice-tutor': {
+      id: '/_authenticated/voice-tutor'
+      path: '/voice-tutor'
+      fullPath: '/voice-tutor'
+      preLoaderRoute: typeof AuthenticatedVoiceTutorRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/topics': {
       id: '/_authenticated/topics'
@@ -496,6 +515,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSolverRoute: typeof AuthenticatedSolverRoute
   AuthenticatedStudyRoute: typeof AuthenticatedStudyRoute
   AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRoute
+  AuthenticatedVoiceTutorRoute: typeof AuthenticatedVoiceTutorRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -515,6 +535,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSolverRoute: AuthenticatedSolverRoute,
   AuthenticatedStudyRoute: AuthenticatedStudyRoute,
   AuthenticatedTopicsRoute: AuthenticatedTopicsRoute,
+  AuthenticatedVoiceTutorRoute: AuthenticatedVoiceTutorRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

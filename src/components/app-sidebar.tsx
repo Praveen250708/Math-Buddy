@@ -16,6 +16,7 @@ import {
   Camera,
   BarChart3,
   RotateCcw,
+  Bot,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const studyItems = [
   { to: "/quiz", label: "Quiz Mode", icon: Target },
   { to: "/review", label: "Review Mistakes", icon: RotateCcw },
   { to: "/study", label: "Focus Timer", icon: Timer },
+  { to: "/voice-tutor", label: "Voice Tutor", icon: Bot },
 ] as const;
 
 const trackItems = [

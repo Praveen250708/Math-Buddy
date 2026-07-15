@@ -625,6 +625,72 @@ Student's current doubt: ${data.doubt}`;
     return { content };
   });
 
+export const queryVoiceTutor = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        question: z.string().trim().min(1),
+        chatHistory: z
+          .array(
+            z.object({
+              role: z.enum(["user", "model"]),
+              text: z.string(),
+            }),
+          )
+          .optional()
+          .nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const historyText = data.chatHistory
+      ?.map((msg) => `${msg.role === "user" ? "Student" : "Tutor"}: ${msg.text}`)
+      .join("\n") || "";
+
+    const systemPrompt = `You are a friendly, encouraging, and clear college-level math tutor helping a student via a voice interface.
+The student will ask you questions by speaking. You must return a JSON response with two properties:
+1. "spokenText": This text will be read aloud to the student using text-to-speech. It must be highly conversational, friendly, and easy to speak and listen to.
+   - Speak math naturally in plain words. Do NOT include raw LaTeX code or symbols in this field (e.g. say "integral of x squared" instead of "\\\\int x^2", "x equals negative b plus or minus square root of b squared minus four a c all over two a" instead of writing raw formulas).
+   - Keep it concise, clear, and direct. Break down explanations into simple spoken steps. Limit this to under 80 words.
+2. "displayText": This text will be shown on the screen. It can be formatted with Markdown and proper LaTeX ($...$ for inline, $$...$$ for display) so the student can read the math clearly. It can include full formulas and step-by-step calculations.
+
+Ensure the returned format is a valid JSON object matching the schema:
+{
+  "spokenText": "...",
+  "displayText": "..."
+}`;
+
+    const userPrompt = `${historyText ? `Conversation History:\n${historyText}\n` : ""}Student's spoken question: ${data.question}`;
+
+    const content = await callAI(systemPrompt, userPrompt, true);
+    
+    // Try parsing directly first, then fall back to sanitizing LaTeX backslashes
+    const tryParse = (raw: string) => {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        // LaTeX backslashes like \sum, \infty, \to are invalid JSON escapes.
+        // Escape lone backslashes that aren't already valid JSON escape sequences.
+        const sanitized = raw.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+        return JSON.parse(sanitized);
+      }
+    };
+
+    try {
+      const parsed = tryParse(content);
+      return {
+        spokenText: parsed.spokenText || "",
+        displayText: parsed.displayText || "",
+      };
+    } catch (err) {
+      console.error("Failed to parse Voice Tutor response:", content);
+      return {
+        spokenText: "I'm sorry, I encountered an issue preparing the spoken response. Please read the mathematical explanation on screen.",
+        displayText: content,
+      };
+    }
+  });
+
 
 
 
