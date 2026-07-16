@@ -4,6 +4,7 @@ import {
   BookOpenText,
   Calculator,
   Lightbulb,
+  ShoppingBag,
   Target,
   Timer,
   FileText,
@@ -51,6 +52,7 @@ const trackItems = [
   { to: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { to: "/exam-planner", label: "Exam Planner", icon: CalendarClock },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/store", label: "Store", icon: ShoppingBag },
 ] as const;
 
 export function AppSidebar() {

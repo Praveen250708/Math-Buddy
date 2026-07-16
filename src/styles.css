@@ -362,4 +362,186 @@
   }
 }
 
+/* ═══════════════════════════════════════════════
+   STORE: Purchasable Dashboard Themes
+   ═══════════════════════════════════════════════ */
+
+/* 1 — Midnight Galaxy: Deep purple/blue cosmic gradient */
+.theme-midnight-galaxy {
+  --primary: oklch(0.55 0.25 290);
+  --primary-foreground: oklch(0.98 0.005 290);
+  --primary-glow: oklch(0.68 0.22 300);
+  --accent: oklch(0.72 0.2 330);
+  --accent-foreground: oklch(0.18 0.05 330);
+  --gradient-primary: linear-gradient(135deg, oklch(0.45 0.25 280) 0%, oklch(0.6 0.22 310) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.96 0.02 290) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.96 0.03 290) 0%, oklch(0.99 0.005 280) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.55 0.25 290 / 0.4);
+  --ring: oklch(0.55 0.25 290);
+}
+.dark.theme-midnight-galaxy {
+  --primary: oklch(0.65 0.25 290);
+  --primary-foreground: oklch(0.98 0.005 290);
+  --primary-glow: oklch(0.75 0.2 310);
+  --accent: oklch(0.75 0.2 330);
+  --accent-foreground: oklch(0.16 0.05 330);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.25 280) 0%, oklch(0.7 0.22 310) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.2 0.08 290) 0%, oklch(0.16 0.06 285) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.2 0.1 290) 0%, oklch(0.12 0.06 285) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.65 0.25 290 / 0.5);
+  --ring: oklch(0.65 0.25 290);
+}
+
+/* 2 — Sunset Glow: Warm orange-pink gradient */
+.theme-sunset-glow {
+  --primary: oklch(0.6 0.22 25);
+  --primary-foreground: oklch(0.98 0.005 25);
+  --primary-glow: oklch(0.72 0.2 10);
+  --accent: oklch(0.7 0.2 350);
+  --accent-foreground: oklch(0.18 0.05 350);
+  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.22 30) 0%, oklch(0.7 0.2 355) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.02 20) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.03 20) 0%, oklch(0.99 0.005 15) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.6 0.22 25 / 0.4);
+  --ring: oklch(0.6 0.22 25);
+}
+.dark.theme-sunset-glow {
+  --primary: oklch(0.7 0.22 25);
+  --primary-foreground: oklch(0.98 0.005 25);
+  --primary-glow: oklch(0.8 0.18 10);
+  --accent: oklch(0.75 0.2 350);
+  --accent-foreground: oklch(0.16 0.05 350);
+  --gradient-primary: linear-gradient(135deg, oklch(0.65 0.22 30) 0%, oklch(0.75 0.2 355) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.22 0.06 20) 0%, oklch(0.17 0.04 15) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.22 0.08 20) 0%, oklch(0.13 0.04 15) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.7 0.22 25 / 0.5);
+  --ring: oklch(0.7 0.22 25);
+}
+
+/* 3 — Ocean Breeze: Aqua/teal serene water-inspired */
+.theme-ocean-breeze {
+  --primary: oklch(0.55 0.15 195);
+  --primary-foreground: oklch(0.98 0.005 195);
+  --primary-glow: oklch(0.68 0.13 185);
+  --accent: oklch(0.65 0.18 175);
+  --accent-foreground: oklch(0.18 0.05 175);
+  --gradient-primary: linear-gradient(135deg, oklch(0.5 0.15 200) 0%, oklch(0.65 0.14 180) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 195) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.96 0.025 195) 0%, oklch(0.99 0.005 190) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.55 0.15 195 / 0.4);
+  --ring: oklch(0.55 0.15 195);
+}
+.dark.theme-ocean-breeze {
+  --primary: oklch(0.65 0.15 195);
+  --primary-foreground: oklch(0.98 0.005 195);
+  --primary-glow: oklch(0.75 0.12 185);
+  --accent: oklch(0.7 0.16 175);
+  --accent-foreground: oklch(0.16 0.05 175);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.15 200) 0%, oklch(0.7 0.14 180) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.2 0.06 195) 0%, oklch(0.16 0.04 190) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.2 0.08 195) 0%, oklch(0.12 0.04 190) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.65 0.15 195 / 0.5);
+  --ring: oklch(0.65 0.15 195);
+}
+
+/* 4 — Neon Cyber: Neon green/pink cyberpunk */
+.theme-neon-cyber {
+  --primary: oklch(0.72 0.25 145);
+  --primary-foreground: oklch(0.12 0.05 145);
+  --primary-glow: oklch(0.8 0.22 155);
+  --accent: oklch(0.7 0.25 340);
+  --accent-foreground: oklch(0.18 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.25 145) 0%, oklch(0.75 0.22 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 150) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.96 0.025 150) 0%, oklch(0.99 0.005 145) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.72 0.25 145 / 0.5);
+  --ring: oklch(0.72 0.25 145);
+}
+.dark.theme-neon-cyber {
+  --primary: oklch(0.78 0.25 145);
+  --primary-foreground: oklch(0.1 0.05 145);
+  --primary-glow: oklch(0.85 0.2 155);
+  --accent: oklch(0.75 0.25 340);
+  --accent-foreground: oklch(0.14 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.25 145) 0%, oklch(0.78 0.22 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.18 0.06 150) 0%, oklch(0.14 0.04 145) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.18 0.1 150) 0%, oklch(0.1 0.06 145) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.78 0.25 145 / 0.6);
+  --ring: oklch(0.78 0.25 145);
+}
+
+/* 5 — Forest Calm: Nature-inspired earthy green */
+.theme-forest-calm {
+  --primary: oklch(0.5 0.14 155);
+  --primary-foreground: oklch(0.98 0.005 155);
+  --primary-glow: oklch(0.62 0.12 145);
+  --accent: oklch(0.65 0.12 85);
+  --accent-foreground: oklch(0.18 0.05 85);
+  --gradient-primary: linear-gradient(135deg, oklch(0.45 0.14 160) 0%, oklch(0.58 0.12 140) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 155) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.96 0.02 155) 0%, oklch(0.99 0.005 150) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.5 0.14 155 / 0.35);
+  --ring: oklch(0.5 0.14 155);
+}
+.dark.theme-forest-calm {
+  --primary: oklch(0.62 0.16 155);
+  --primary-foreground: oklch(0.98 0.005 155);
+  --primary-glow: oklch(0.72 0.12 145);
+  --accent: oklch(0.7 0.12 85);
+  --accent-foreground: oklch(0.16 0.05 85);
+  --gradient-primary: linear-gradient(135deg, oklch(0.52 0.16 160) 0%, oklch(0.65 0.12 140) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.2 0.06 155) 0%, oklch(0.16 0.04 150) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.2 0.08 155) 0%, oklch(0.12 0.04 150) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.62 0.16 155 / 0.5);
+  --ring: oklch(0.62 0.16 155);
+}
+
+/* ═══════════════════════════════════════════════
+   STORE: Animations & Effects
+   ═══════════════════════════════════════════════ */
+
+@keyframes store-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.store-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.08) 40%,
+    oklch(1 0 0 / 0.15) 50%,
+    oklch(1 0 0 / 0.08) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: store-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes purchase-pop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.12); }
+  50%  { transform: scale(0.95); }
+  70%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+.purchase-pop { animation: purchase-pop 0.5s ease-out; }
+
+@keyframes confetti-burst {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+}
+.confetti-burst { animation: confetti-burst 0.7s ease-out forwards; }
+
+@keyframes price-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.price-pulse { animation: price-pulse 2s ease-in-out infinite; }
+
+@keyframes glow-border {
+  0%, 100% { border-color: oklch(0.72 0.18 55 / 0.3); box-shadow: 0 0 15px oklch(0.72 0.18 55 / 0.1); }
+  50%      { border-color: oklch(0.72 0.18 55 / 0.8); box-shadow: 0 0 25px oklch(0.72 0.18 55 / 0.3); }
+}
+.glow-border { animation: glow-border 2.5s ease-in-out infinite; }
 

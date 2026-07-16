@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -15,6 +15,10 @@ import {
   User,
   AlertCircle,
   HelpCircle,
+  Trophy,
+  Lock,
+  ShoppingBag,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,6 +26,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownView } from "@/components/markdown-view";
 import { queryVoiceTutor } from "@/lib/ai.functions";
+import { getMyProfile } from "@/lib/gamification.functions";
+import { spendPoints } from "@/lib/store.functions";
+
 
 export const Route = createFileRoute("/_authenticated/voice-tutor")({
   component: VoiceTutorPage,
@@ -40,8 +47,242 @@ const SpeechRecognition =
     ? (window.SpeechRecognition || (window as any).webkitSpeechRecognition)
     : null;
 
+/* ───────────────────────── Siri Orb Component ───────────────────────── */
+function SiriOrb({ isListening, isSpeaking, isQuerying, onToggle }: {
+  isListening: boolean;
+  isSpeaking: boolean;
+  isQuerying: boolean;
+  onToggle: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    const size = 220;
+    canvas.width = size * 2;   // retina
+    canvas.height = size * 2;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(2, 2);
+    const cx = size / 2;
+    const cy = size / 2;
+
+    let t = 0;
+    const draw = () => {
+      t += 0.018;
+      ctx.clearRect(0, 0, size, size);
+
+      if (isListening) {
+        /* ── Active Siri orb: colorful glowing blobs ── */
+        // Outer soft glow
+        for (let ring = 3; ring >= 0; ring--) {
+          const r = 70 + ring * 14 + Math.sin(t * 1.5 + ring) * 6;
+          const alpha = 0.06 - ring * 0.012;
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          grad.addColorStop(0, `hsla(${(t * 60 + ring * 90) % 360}, 100%, 70%, ${alpha + 0.05})`);
+          grad.addColorStop(1, `hsla(${(t * 60 + ring * 90 + 120) % 360}, 100%, 50%, 0)`);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // Animated color blobs orbiting the center (Siri-style)
+        const blobColors = [
+          { h: 280, s: 100, l: 65 }, // Purple
+          { h: 200, s: 100, l: 60 }, // Cyan-Blue
+          { h: 340, s: 100, l: 65 }, // Pink-Red
+          { h: 160, s: 100, l: 55 }, // Teal-Green
+          { h: 30,  s: 100, l: 60 }, // Orange
+        ];
+        for (let i = 0; i < blobColors.length; i++) {
+          const angle = (Math.PI * 2 * i) / blobColors.length + t * (0.8 + i * 0.15);
+          const dist = 28 + Math.sin(t * 2.5 + i * 1.3) * 12;
+          const bx = cx + Math.cos(angle) * dist;
+          const by = cy + Math.sin(angle) * dist;
+          const br = 22 + Math.sin(t * 3 + i * 0.9) * 8;
+          const { h, s, l } = blobColors[i];
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+          grad.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, 0.85)`);
+          grad.addColorStop(0.6, `hsla(${h}, ${s}%, ${l}%, 0.3)`);
+          grad.addColorStop(1, `hsla(${h}, ${s}%, ${l}%, 0)`);
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // Core bright white glow
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18);
+        coreGrad.addColorStop(0, "rgba(255,255,255,0.95)");
+        coreGrad.addColorStop(0.5, "rgba(255,255,255,0.3)");
+        coreGrad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad;
+        ctx.fill();
+
+        // Ripple rings
+        for (let r = 0; r < 3; r++) {
+          const rippleR = 50 + ((t * 40 + r * 30) % 60);
+          const rippleAlpha = Math.max(0, 0.25 - ((t * 40 + r * 30) % 60) / 60 * 0.25);
+          ctx.beginPath();
+          ctx.arc(cx, cy, rippleR, 0, Math.PI * 2);
+          ctx.strokeStyle = `hsla(${(t * 50 + r * 120) % 360}, 90%, 70%, ${rippleAlpha})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // Waveform ring
+        ctx.beginPath();
+        for (let a = 0; a < Math.PI * 2; a += 0.02) {
+          const waveR = 45 + Math.sin(a * 6 + t * 8) * 6 + Math.sin(a * 10 - t * 5) * 3;
+          const wx = cx + Math.cos(a) * waveR;
+          const wy = cy + Math.sin(a) * waveR;
+          if (a === 0) ctx.moveTo(wx, wy);
+          else ctx.lineTo(wx, wy);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = `hsla(${(t * 80) % 360}, 100%, 80%, 0.5)`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+      } else if (isSpeaking) {
+        /* ── Speaking: gentle pulsing blue-purple orb ── */
+        const pulseR = 40 + Math.sin(t * 3) * 6;
+        for (let ring = 2; ring >= 0; ring--) {
+          const r = pulseR + ring * 12;
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          grad.addColorStop(0, `hsla(240, 80%, 70%, ${0.3 - ring * 0.08})`);
+          grad.addColorStop(1, `hsla(280, 80%, 60%, 0)`);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+        // Sound waves
+        for (let w = 0; w < 3; w++) {
+          const waveR = 50 + ((t * 30 + w * 25) % 50);
+          const wAlpha = Math.max(0, 0.3 - ((t * 30 + w * 25) % 50) / 50 * 0.3);
+          ctx.beginPath();
+          ctx.arc(cx, cy, waveR, -0.4, 0.4);
+          ctx.strokeStyle = `hsla(240, 80%, 75%, ${wAlpha})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, waveR, Math.PI - 0.4, Math.PI + 0.4);
+          ctx.stroke();
+        }
+
+      } else {
+        /* ── Idle: elegant breathing gradient orb ── */
+        const breathR = 38 + Math.sin(t * 1.2) * 4;
+        // Outer halo
+        const haloGrad = ctx.createRadialGradient(cx, cy, breathR - 5, cx, cy, breathR + 25);
+        haloGrad.addColorStop(0, `hsla(260, 80%, 65%, ${0.15 + Math.sin(t) * 0.05})`);
+        haloGrad.addColorStop(1, "hsla(260, 80%, 65%, 0)");
+        ctx.beginPath();
+        ctx.arc(cx, cy, breathR + 25, 0, Math.PI * 2);
+        ctx.fillStyle = haloGrad;
+        ctx.fill();
+
+        // Main orb
+        const orbGrad = ctx.createRadialGradient(cx - 6, cy - 8, 0, cx, cy, breathR);
+        orbGrad.addColorStop(0, "hsla(270, 90%, 75%, 0.9)");
+        orbGrad.addColorStop(0.5, "hsla(250, 85%, 60%, 0.7)");
+        orbGrad.addColorStop(1, "hsla(230, 80%, 50%, 0.4)");
+        ctx.beginPath();
+        ctx.arc(cx, cy, breathR, 0, Math.PI * 2);
+        ctx.fillStyle = orbGrad;
+        ctx.fill();
+
+        // Specular highlight
+        const specGrad = ctx.createRadialGradient(cx - 10, cy - 12, 0, cx - 10, cy - 12, 16);
+        specGrad.addColorStop(0, "rgba(255,255,255,0.7)");
+        specGrad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.beginPath();
+        ctx.arc(cx - 10, cy - 12, 16, 0, Math.PI * 2);
+        ctx.fillStyle = specGrad;
+        ctx.fill();
+      }
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [isListening, isSpeaking]);
+
+  return (
+    <div className="relative flex flex-col items-center gap-4">
+      {/* Canvas Orb */}
+      <div className="relative cursor-pointer" onClick={isQuerying ? undefined : onToggle}>
+        <canvas
+          ref={canvasRef}
+          className="relative z-10"
+          style={{ filter: isListening ? "drop-shadow(0 0 30px rgba(139,92,246,0.5))" : "drop-shadow(0 0 15px rgba(139,92,246,0.25))" }}
+        />
+        {/* Clickable overlay circle for hit area */}
+        <div
+          className={`absolute inset-0 m-auto z-20 rounded-full transition-all duration-500 flex items-center justify-center ${
+            isQuerying ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+          }`}
+          style={{ width: 90, height: 90, top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+        >
+          {isListening ? (
+            <div className="flex items-end gap-[3px] h-8">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className="inline-block w-[3px] rounded-full bg-white"
+                  style={{
+                    animation: `siri-bar 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                    height: 8,
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <Mic className={`h-8 w-8 transition-colors duration-300 ${isSpeaking ? "text-blue-300" : "text-white/90"}`} />
+          )}
+        </div>
+      </div>
+
+      {/* Status text */}
+      <div className="text-center space-y-1">
+        <p className={`text-sm font-semibold transition-all duration-300 ${
+          isListening ? "text-purple-400" : isSpeaking ? "text-blue-400" : isQuerying ? "text-amber-400" : "text-muted-foreground"
+        }`}>
+          {isListening
+            ? "Listening..."
+            : isSpeaking
+            ? "Speaking..."
+            : isQuerying
+            ? "Thinking..."
+            : "Tap to speak"}
+        </p>
+        {isListening && (
+          <p className="text-xs text-muted-foreground animate-pulse">Tap again to stop</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────── Main Page ────────────────────────── */
 function VoiceTutorPage() {
   const voiceTutorFn = useServerFn(queryVoiceTutor);
+  const profileFn = useServerFn(getMyProfile);
+  const spendFn = useServerFn(spendPoints);
+
+  const [unlocked, setUnlocked] = useState(false);
+  const [points, setPoints] = useState(0);
+  const [unlocking, setUnlocking] = useState(false);
+  const [checkingUnlock, setCheckingUnlock] = useState(true);
+
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isQuerying, setIsQuerying] = useState(false);
@@ -53,6 +294,49 @@ function VoiceTutorPage() {
 
   const recognitionRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Check unlock status and points
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      const isUnlocked = purchases.includes("feature-voice-tutor");
+      setUnlocked(isUnlocked);
+      setCheckingUnlock(false);
+
+      if (!isUnlocked) {
+        profileFn({}).then((res) => {
+          if (res.profile) setPoints(res.profile.total_points ?? 0);
+        });
+      }
+    }
+  }, [profileFn]);
+
+  const handleUnlock = async () => {
+    if (points < 150) {
+      toast.error("Not enough focus points! You need 150 points to unlock this feature.");
+      return;
+    }
+    setUnlocking(true);
+    try {
+      const res = await spendFn({ data: { cost: 150, itemId: "feature-voice-tutor" } });
+      setPoints(res.newBalance);
+
+      // Save to localStorage purchases list
+      const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      if (!purchases.includes("feature-voice-tutor")) {
+        purchases.push("feature-voice-tutor");
+        localStorage.setItem("mathbuddy_store_purchases", JSON.stringify(purchases));
+      }
+
+      setUnlocked(true);
+      toast.success("🎉 Voice Tutor unlocked successfully! You can now use voice queries.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unlock failed");
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
 
   // Initialize SpeechSynthesis and check browser voice capability
   useEffect(() => {
@@ -244,26 +528,98 @@ function VoiceTutorPage() {
     "What is a matrix determinant?",
   ];
 
+  if (checkingUnlock) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="mx-auto max-w-lg space-y-6 pt-10 page-in">
+        <Card className="border-2 border-primary/20 bg-gradient-card shadow-elegant relative overflow-hidden">
+          <div className="store-shimmer absolute inset-0 pointer-events-none" />
+          <CardHeader className="text-center relative z-10">
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Bot className="h-10 w-10 text-primary animate-pulse" />
+            </div>
+            <CardTitle className="font-display text-2xl font-bold">Voice Tutor Locked</CardTitle>
+            <CardDescription className="text-sm">
+              Unlock the interactive voice tutoring module using Focus Points.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 relative z-10 text-center">
+            <div className="rounded-xl border border-border bg-card/60 p-4 space-y-3">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 justify-center">
+                <Sparkles className="h-4 w-4 text-accent" /> Premium Voice Features Include:
+              </h3>
+              <ul className="text-xs text-muted-foreground space-y-2 text-left list-disc list-inside">
+                <li>Real-time speech-to-text question recognition</li>
+                <li>Dynamic read-aloud spoken explanations with premium voices</li>
+                <li>Interactive Siri-style animated orb dashboard</li>
+                <li>Voice replay and auto-read toggle settings</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 py-2 border-t border-b border-border">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="h-4 w-4 text-yellow-300" />
+                <span className="text-xs text-muted-foreground">Your Balance:</span>
+                <span className="font-mono text-sm font-bold">{points} pts</span>
+              </div>
+              <div className="h-4 w-[1px] bg-border" />
+              <div className="flex items-center gap-1.5">
+                <ShoppingBag className="h-4 w-4 text-accent" />
+                <span className="text-xs text-muted-foreground">Price:</span>
+                <span className="font-mono text-sm font-bold text-accent">150 pts</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleUnlock}
+                disabled={points < 150 || unlocking}
+                className="w-full bg-gradient-primary shadow-glow text-white"
+              >
+                {unlocking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Unlocking...
+                  </>
+                ) : points < 150 ? (
+                  <>
+                    <Lock className="mr-2 h-4 w-4" /> Insufficient Points (150 required)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4 text-yellow-300 animate-bounce" /> Unlock Voice Tutor for 150 pts
+                  </>
+                )}
+              </Button>
+              <Link to="/dashboard">
+                <Button variant="ghost" className="w-full text-xs text-muted-foreground">
+                  Go back to Dashboard
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      {/* Custom styles for animations */}
+      {/* Siri-style keyframe animations */}
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes pulse-outer {
-          0% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.2); opacity: 0.3; }
-          100% { transform: scale(1.4); opacity: 0; }
+        @keyframes siri-bar {
+          0% { height: 4px; }
+          100% { height: 24px; }
         }
         @keyframes wave-bar {
           0%, 100% { height: 4px; }
           50% { height: 28px; }
-        }
-        .pulse-effect {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: rgba(124, 58, 237, 0.4);
-          animation: pulse-outer 2s infinite ease-out;
         }
         .wave-container span {
           display: inline-block;
@@ -311,53 +667,19 @@ function VoiceTutorPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Tutor Control Dashboard */}
-        <Card className="border-border bg-gradient-card md:col-span-1 shadow-card h-fit">
-          <CardHeader className="pb-4">
+        <Card className="border-border bg-gradient-card md:col-span-1 shadow-card h-fit overflow-hidden">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg">Tutor Speech Controls</CardTitle>
             <CardDescription>Speak, listen, or replay answers.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center py-6 space-y-6">
-            {/* Visualizer Panel */}
-            <div className="relative flex items-center justify-center h-40 w-40">
-              {isListening && (
-                <>
-                  <div className="pulse-effect" style={{ animationDelay: "0s" }} />
-                  <div className="pulse-effect" style={{ animationDelay: "0.7s" }} />
-                  <div className="pulse-effect" style={{ animationDelay: "1.4s" }} />
-                </>
-              )}
-              <Button
-                size="icon"
-                onClick={isListening ? stopListening : startListening}
-                disabled={isQuerying}
-                className={`relative z-10 h-24 w-24 rounded-full shadow-glow transition-all duration-300 ${
-                  isListening
-                    ? "bg-red-500 hover:bg-red-600 scale-105"
-                    : "bg-gradient-primary hover:scale-105"
-                }`}
-              >
-                {isListening ? (
-                  <MicOff className="h-10 w-10 text-white animate-pulse" />
-                ) : (
-                  <Mic className="h-10 w-10 text-white" />
-                )}
-              </Button>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm font-semibold">
-                {isListening
-                  ? "Listening... Speak now"
-                  : isSpeaking
-                  ? "Speaking explanation..."
-                  : isQuerying
-                  ? "AI Tutor is thinking..."
-                  : "Tap mic to start talking"}
-              </p>
-              {isListening && (
-                <p className="text-xs text-muted-foreground mt-1">Tap microphone again when finished</p>
-              )}
-            </div>
+          <CardContent className="flex flex-col items-center justify-center py-2 space-y-4">
+            {/* ★ Siri Orb Visualizer ★ */}
+            <SiriOrb
+              isListening={isListening}
+              isSpeaking={isSpeaking}
+              isQuerying={isQuerying}
+              onToggle={isListening ? stopListening : startListening}
+            />
 
             {/* Speaking Waveform / Control */}
             {isSpeaking && (

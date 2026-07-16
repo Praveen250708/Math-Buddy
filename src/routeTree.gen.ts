@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVoiceTutorRouteImport } from './routes/_authenticated/voice-tutor'
 import { Route as AuthenticatedTopicsRouteImport } from './routes/_authenticated/topics'
 import { Route as AuthenticatedStudyRouteImport } from './routes/_authenticated/study'
+import { Route as AuthenticatedStoreRouteImport } from './routes/_authenticated/store'
 import { Route as AuthenticatedSolverRouteImport } from './routes/_authenticated/solver'
 import { Route as AuthenticatedSnapSolveRouteImport } from './routes/_authenticated/snap-solve'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
@@ -81,6 +82,11 @@ const AuthenticatedTopicsRoute = AuthenticatedTopicsRouteImport.update({
 const AuthenticatedStudyRoute = AuthenticatedStudyRouteImport.update({
   id: '/study',
   path: '/study',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStoreRoute = AuthenticatedStoreRouteImport.update({
+  id: '/store',
+  path: '/store',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSolverRoute = AuthenticatedSolverRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
+  '/store': typeof AuthenticatedStoreRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
   '/voice-tutor': typeof AuthenticatedVoiceTutorRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/review': typeof AuthenticatedReviewRoute
   '/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/solver': typeof AuthenticatedSolverRoute
+  '/store': typeof AuthenticatedStoreRoute
   '/study': typeof AuthenticatedStudyRoute
   '/topics': typeof AuthenticatedTopicsRoute
   '/voice-tutor': typeof AuthenticatedVoiceTutorRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/snap-solve': typeof AuthenticatedSnapSolveRoute
   '/_authenticated/solver': typeof AuthenticatedSolverRoute
+  '/_authenticated/store': typeof AuthenticatedStoreRoute
   '/_authenticated/study': typeof AuthenticatedStudyRoute
   '/_authenticated/topics': typeof AuthenticatedTopicsRoute
   '/_authenticated/voice-tutor': typeof AuthenticatedVoiceTutorRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/snap-solve'
     | '/solver'
+    | '/store'
     | '/study'
     | '/topics'
     | '/voice-tutor'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/snap-solve'
     | '/solver'
+    | '/store'
     | '/study'
     | '/topics'
     | '/voice-tutor'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/_authenticated/review'
     | '/_authenticated/snap-solve'
     | '/_authenticated/solver'
+    | '/_authenticated/store'
     | '/_authenticated/study'
     | '/_authenticated/topics'
     | '/_authenticated/voice-tutor'
@@ -395,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/study'
       fullPath: '/study'
       preLoaderRoute: typeof AuthenticatedStudyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/store': {
+      id: '/_authenticated/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof AuthenticatedStoreRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/solver': {
@@ -513,6 +532,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSnapSolveRoute: typeof AuthenticatedSnapSolveRoute
   AuthenticatedSolverRoute: typeof AuthenticatedSolverRoute
+  AuthenticatedStoreRoute: typeof AuthenticatedStoreRoute
   AuthenticatedStudyRoute: typeof AuthenticatedStudyRoute
   AuthenticatedTopicsRoute: typeof AuthenticatedTopicsRoute
   AuthenticatedVoiceTutorRoute: typeof AuthenticatedVoiceTutorRoute
@@ -533,6 +553,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSnapSolveRoute: AuthenticatedSnapSolveRoute,
   AuthenticatedSolverRoute: AuthenticatedSolverRoute,
+  AuthenticatedStoreRoute: AuthenticatedStoreRoute,
   AuthenticatedStudyRoute: AuthenticatedStudyRoute,
   AuthenticatedTopicsRoute: AuthenticatedTopicsRoute,
   AuthenticatedVoiceTutorRoute: AuthenticatedVoiceTutorRoute,

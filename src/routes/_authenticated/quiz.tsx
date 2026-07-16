@@ -5,7 +5,6 @@ import { Target, Loader2, Check, X, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateQuiz, type QuizQuestion } from "@/lib/ai.functions";
 import { submitQuiz } from "@/lib/gamification.functions";
 import { addMissedQuestion } from "@/lib/review.functions";
@@ -23,7 +22,7 @@ function QuizPage() {
   const addMissedFn = useServerFn(addMissedQuestion);
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "mixed">("mixed");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
   const [stage, setStage] = useState<"setup" | "quiz" | "result">("setup");
@@ -99,51 +98,91 @@ function QuizPage() {
 
   const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.answer ? 1 : 0), 0);
 
+  const difficultyConfig = {
+    easy: {
+      label: "Easy Mode",
+      color: "text-emerald-400",
+      borderColor: "border-emerald-400",
+      shadowColor: "shadow-[0_0_20px_rgba(52,211,153,0.25)]",
+      bgGlow: "bg-emerald-400/5",
+      points: "+1 pt / correct, +5 bonus",
+    },
+    medium: {
+      label: "Medium Mode",
+      color: "text-amber-400",
+      borderColor: "border-amber-400",
+      shadowColor: "shadow-[0_0_20px_rgba(251,191,36,0.25)]",
+      bgGlow: "bg-amber-400/5",
+      points: "+2 pts / correct, +10 bonus",
+    },
+    hard: {
+      label: "Hard Mode",
+      color: "text-rose-400",
+      borderColor: "border-rose-400",
+      shadowColor: "shadow-[0_0_20px_rgba(251,113,133,0.25)]",
+      bgGlow: "bg-rose-400/5",
+      points: "+3 pts / correct, +15 bonus",
+    },
+  } as const;
+
   return (
     <div className="space-y-8">
       <PageHeader
         icon={<Target className="h-6 w-6" />}
         title="Quiz Mode"
         subtitle="Enter a topic. Get 10 AI-generated MCQs. Earn focus-points."
-        extra={
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Difficulty:</span>
-            <Select
-              value={difficulty}
-              onValueChange={(v) => setDifficulty(v as any)}
-              disabled={stage !== "setup" || loading}
-            >
-              <SelectTrigger className="w-[120px] h-9">
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mixed">Mixed</SelectItem>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
       />
 
       {stage === "setup" && (
-        <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
-          <label className="text-sm font-medium">Pick a topic</label>
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-            <Input
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. Probability, Limits, Linear Algebra…"
-            />
-            <Button onClick={start} disabled={loading || !topic.trim()} className="bg-gradient-primary">
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Generate quiz
-            </Button>
+        <div className="space-y-5">
+          {/* Topic input */}
+          <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
+            <label className="text-sm font-medium">Pick a topic</label>
+            <div className="mt-2">
+              <Input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g. Probability, Limits, Linear Algebra…"
+                onKeyDown={(e) => { if (e.key === "Enter" && topic.trim()) start(); }}
+              />
+            </div>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            10 multiple-choice questions, mixed difficulty. Earn +2 per correct, +10 bonus for a perfect score.
-          </p>
+
+          {/* ★ Premium Difficulty Selector Card ★ */}
+          <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
+            <h3 className="text-sm font-bold mb-4">Select Difficulty Level</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(["easy", "medium", "hard"] as const).map((level) => {
+                const cfg = difficultyConfig[level];
+                const isSelected = difficulty === level;
+                return (
+                  <button
+                    key={level}
+                    onClick={() => setDifficulty(level)}
+                    disabled={loading}
+                    className={`relative rounded-xl border-2 px-4 py-5 text-center transition-all duration-300 cursor-pointer ${
+                      isSelected
+                        ? `${cfg.borderColor} ${cfg.shadowColor} ${cfg.bgGlow} scale-[1.02]`
+                        : "border-border/50 hover:border-border bg-card/30 hover:bg-card/50"
+                    }`}
+                  >
+                    <div className={`font-bold text-base mb-1 transition-colors duration-300 ${isSelected ? cfg.color : "text-muted-foreground"}`}>
+                      {cfg.label}
+                    </div>
+                    <div className={`text-xs transition-colors duration-300 ${isSelected ? cfg.color + "/70" : "text-muted-foreground/60"}`}>
+                      {cfg.points}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button onClick={start} disabled={loading || !topic.trim()} className="bg-gradient-primary px-6">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Generate quiz
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
