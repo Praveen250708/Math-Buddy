@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Target, Loader2, Check, X, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { generateQuiz, type QuizQuestion } from "@/lib/ai.functions";
-import { submitQuiz } from "@/lib/gamification.functions";
+import { submitQuiz, getMyProfile } from "@/lib/gamification.functions";
+import { spendPoints } from "@/lib/store.functions";
 import { addMissedQuestion } from "@/lib/review.functions";
 import { MarkdownView } from "@/components/markdown-view";
 import { PageHeader } from "./formulas";
@@ -16,13 +17,22 @@ export const Route = createFileRoute("/_authenticated/quiz")({
   component: QuizPage,
 });
 
+const FREE_PRESET_TOPICS = ["probability", "limits", "linear algebra", "differentiation", "integration"];
+
 function QuizPage() {
   const genFn = useServerFn(generateQuiz);
   const submitFn = useServerFn(submitQuiz);
   const addMissedFn = useServerFn(addMissedQuestion);
+  const profileFn = useServerFn(getMyProfile);
+  const spendFn = useServerFn(spendPoints);
+
+  const [purchases, setPurchases] = useState<string[]>([]);
+  const [points, setPoints] = useState(0);
+  const [unlocking, setUnlocking] = useState(false);
+
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
   const [stage, setStage] = useState<"setup" | "quiz" | "result">("setup");
@@ -32,10 +42,54 @@ function QuizPage() {
   useEffect(() => {
     const pre = consumePrefilledTopic();
     if (pre) setTopic(pre);
-  }, []);
+
+    if (typeof window !== "undefined") {
+      const owned = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      setPurchases(owned);
+    }
+
+    profileFn({}).then((res) => {
+      if (res.profile) setPoints(res.profile.total_points ?? 0);
+    });
+  }, [profileFn]);
+
+  const handleUnlockCustomQuiz = async () => {
+    if (points < 250) {
+      toast.error("Not enough focus points! You need 250 points to unlock Custom Quiz Builder.");
+      return;
+    }
+    setUnlocking(true);
+    try {
+      const res = await spendFn({ data: { cost: 250, itemId: "feature-custom-quizzes" } });
+      setPoints(res.newBalance);
+
+      const owned = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      if (!owned.includes("feature-custom-quizzes")) {
+        owned.push("feature-custom-quizzes");
+        localStorage.setItem("mathbuddy_store_purchases", JSON.stringify(owned));
+        setPurchases(owned);
+      }
+
+      toast.success("🎉 Custom Quiz Builder unlocked successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unlock failed");
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const start = async () => {
     if (!topic.trim()) return;
+
+    // Check if it's a custom topic and locked
+    const formattedTopic = topic.trim().toLowerCase();
+    const isFree = FREE_PRESET_TOPICS.includes(formattedTopic);
+    const hasUnlock = purchases.includes("feature-custom-quizzes");
+    if (!isFree && !hasUnlock) {
+      toast.error("Custom Quiz Builder is locked! Unlock it from the Focus Store to query custom topics.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await genFn({ data: { topic, difficulty } });
@@ -136,16 +190,68 @@ function QuizPage() {
       {stage === "setup" && (
         <div className="space-y-5">
           {/* Topic input */}
-          <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
-            <label className="text-sm font-medium">Pick a topic</label>
-            <div className="mt-2">
-              <Input
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. Probability, Limits, Linear Algebra…"
-                onKeyDown={(e) => { if (e.key === "Enter" && topic.trim()) start(); }}
-              />
+          <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card space-y-4">
+            <div>
+              <label className="text-sm font-medium">Pick a topic</label>
+              <div className="mt-2">
+                <Input
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g. Probability, Limits, Linear Algebra…"
+                  onKeyDown={(e) => { if (e.key === "Enter" && topic.trim()) start(); }}
+                />
+              </div>
             </div>
+
+            {/* Quick Presets */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Free Preset Topics:</span>
+              <div className="flex flex-wrap gap-2">
+                {FREE_PRESET_TOPICS.map((preset) => {
+                  const label = preset.charAt(0).toUpperCase() + preset.slice(1);
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTopic(label)}
+                      className={`text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:border-primary hover:text-primary transition-all cursor-pointer ${
+                        topic.toLowerCase() === preset ? "border-primary text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Gating lock alert for custom topic */}
+            {topic.trim() && !FREE_PRESET_TOPICS.includes(topic.trim().toLowerCase()) && !purchases.includes("feature-custom-quizzes") && (
+              <div className="mt-4 p-4 rounded-xl border border-warning/30 bg-warning/5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="text-xl">🔒</span>
+                  <div className="space-y-1 text-left">
+                    <h4 className="text-sm font-bold text-warning font-display">Custom Quiz Builder Locked</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Inputting custom topics requires unlocking the **Custom Quiz Builder** for **250 pts** ({points} pts available).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={handleUnlockCustomQuiz} 
+                    disabled={unlocking}
+                    className="bg-warning text-warning-foreground hover:bg-warning/85 text-xs h-8"
+                  >
+                    {unlocking ? "Unlocking..." : "Unlock (250 pts)"}
+                  </Button>
+                  <Button size="sm" variant="ghost" asChild className="text-xs h-8">
+                    <Link to="/store">Go to Store</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ★ Premium Difficulty Selector Card ★ */}

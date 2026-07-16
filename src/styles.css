@@ -496,6 +496,188 @@
   --ring: oklch(0.62 0.16 155);
 }
 
+/* 6 — Aurora Borealis: Shifting green, blue & violet */
+.theme-aurora-borealis {
+  --primary: oklch(0.6 0.18 200);
+  --primary-foreground: oklch(0.98 0.005 200);
+  --primary-glow: oklch(0.72 0.16 280);
+  --accent: oklch(0.65 0.22 295);
+  --accent-foreground: oklch(0.18 0.05 295);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 195) 0%, oklch(0.6 0.2 280) 50%, oklch(0.65 0.22 310) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.02 200) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.96 0.03 200) 0%, oklch(0.99 0.005 280) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.6 0.18 200 / 0.4);
+  --ring: oklch(0.6 0.18 200);
+}
+.dark.theme-aurora-borealis {
+  --primary: oklch(0.7 0.18 200);
+  --primary-foreground: oklch(0.98 0.005 200);
+  --primary-glow: oklch(0.78 0.16 280);
+  --accent: oklch(0.72 0.22 295);
+  --accent-foreground: oklch(0.14 0.05 295);
+  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.18 195) 0%, oklch(0.68 0.2 280) 50%, oklch(0.72 0.22 310) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.16 0.06 200) 0%, oklch(0.13 0.05 280) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.16 0.1 200) 0%, oklch(0.1 0.06 280) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.7 0.18 200 / 0.5);
+  --ring: oklch(0.7 0.18 200);
+}
+
+/* 7 — Sakura Bloom: Cherry-blossom pinks */
+.theme-sakura-bloom {
+  --primary: oklch(0.65 0.22 350);
+  --primary-foreground: oklch(0.98 0.005 350);
+  --primary-glow: oklch(0.78 0.18 345);
+  --accent: oklch(0.8 0.14 340);
+  --accent-foreground: oklch(0.18 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.22 355) 0%, oklch(0.75 0.18 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.02 350) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.03 350) 0%, oklch(0.99 0.005 345) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.65 0.22 350 / 0.35);
+  --ring: oklch(0.65 0.22 350);
+}
+.dark.theme-sakura-bloom {
+  --primary: oklch(0.72 0.22 350);
+  --primary-foreground: oklch(0.98 0.005 350);
+  --primary-glow: oklch(0.82 0.16 345);
+  --accent: oklch(0.82 0.14 340);
+  --accent-foreground: oklch(0.14 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.22 355) 0%, oklch(0.78 0.18 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.18 0.06 350) 0%, oklch(0.14 0.04 345) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.18 0.08 350) 0%, oklch(0.11 0.04 345) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.72 0.22 350 / 0.5);
+  --ring: oklch(0.72 0.22 350);
+}
+
+/* 8 — Volcano: Fiery reds & deep blacks */
+.theme-volcano {
+  --primary: oklch(0.55 0.24 25);
+  --primary-foreground: oklch(0.98 0.005 25);
+  --primary-glow: oklch(0.68 0.22 30);
+  --accent: oklch(0.65 0.2 45);
+  --accent-foreground: oklch(0.18 0.05 45);
+  --gradient-primary: linear-gradient(135deg, oklch(0.5 0.24 20) 0%, oklch(0.65 0.2 40) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 25) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.025 25) 0%, oklch(0.99 0.005 20) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.55 0.24 25 / 0.45);
+  --ring: oklch(0.55 0.24 25);
+}
+.dark.theme-volcano {
+  --primary: oklch(0.62 0.24 25);
+  --primary-foreground: oklch(0.98 0.005 25);
+  --primary-glow: oklch(0.72 0.2 30);
+  --accent: oklch(0.7 0.2 45);
+  --accent-foreground: oklch(0.14 0.05 45);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.24 20) 0%, oklch(0.7 0.2 40) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.16 0.06 20) 0%, oklch(0.12 0.04 15) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.16 0.1 20) 0%, oklch(0.08 0.06 15) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.62 0.24 25 / 0.55);
+  --ring: oklch(0.62 0.24 25);
+}
+
+/* 9 — Candy Pop: Playful pastels, pink & sky blue */
+.theme-candy-pop {
+  --primary: oklch(0.7 0.2 320);
+  --primary-foreground: oklch(0.98 0.005 320);
+  --primary-glow: oklch(0.8 0.18 310);
+  --accent: oklch(0.7 0.14 220);
+  --accent-foreground: oklch(0.18 0.05 220);
+  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.2 325) 0%, oklch(0.72 0.14 225) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 320) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.025 320) 0%, oklch(0.99 0.005 225) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.7 0.2 320 / 0.35);
+  --ring: oklch(0.7 0.2 320);
+}
+.dark.theme-candy-pop {
+  --primary: oklch(0.75 0.2 320);
+  --primary-foreground: oklch(0.98 0.005 320);
+  --primary-glow: oklch(0.82 0.16 310);
+  --accent: oklch(0.72 0.14 220);
+  --accent-foreground: oklch(0.14 0.05 220);
+  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.2 325) 0%, oklch(0.75 0.14 225) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.18 0.06 320) 0%, oklch(0.14 0.04 225) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.18 0.1 320) 0%, oklch(0.1 0.06 225) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.75 0.2 320 / 0.5);
+  --ring: oklch(0.75 0.2 320);
+}
+
+/* 10 — Stealth Dark: Ultra-minimal matte black */
+.theme-stealth-dark {
+  --primary: oklch(0.6 0.02 260);
+  --primary-foreground: oklch(0.98 0.005 260);
+  --primary-glow: oklch(0.7 0.02 260);
+  --accent: oklch(0.5 0.02 260);
+  --accent-foreground: oklch(0.95 0.005 260);
+  --gradient-primary: linear-gradient(135deg, oklch(0.5 0.02 260) 0%, oklch(0.6 0.02 260) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.97 0 0) 0%, oklch(0.94 0.005 260) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.95 0.005 260) 0%, oklch(0.98 0 0) 60%);
+  --shadow-glow: 0 0 40px -8px oklch(0.6 0.02 260 / 0.25);
+  --ring: oklch(0.6 0.02 260);
+}
+.dark.theme-stealth-dark {
+  --primary: oklch(0.7 0.02 260);
+  --primary-foreground: oklch(0.98 0.005 260);
+  --primary-glow: oklch(0.75 0.02 260);
+  --accent: oklch(0.5 0.02 260);
+  --accent-foreground: oklch(0.95 0.005 260);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.02 260) 0%, oklch(0.65 0.02 260) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.12 0.01 260) 0%, oklch(0.08 0.005 260) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.1 0.01 260) 0%, oklch(0.06 0.005 260) 60%);
+  --shadow-glow: 0 0 40px -8px oklch(0.7 0.02 260 / 0.3);
+  --ring: oklch(0.7 0.02 260);
+}
+
+/* 11 — Retro Arcade: 80s neon yellow, pink, purple */
+.theme-retro-arcade {
+  --primary: oklch(0.82 0.18 90);
+  --primary-foreground: oklch(0.15 0.05 90);
+  --primary-glow: oklch(0.88 0.14 85);
+  --accent: oklch(0.65 0.24 340);
+  --accent-foreground: oklch(0.18 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.78 0.18 95) 0%, oklch(0.68 0.22 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.015 90) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.02 90) 0%, oklch(0.99 0.005 340) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.82 0.18 90 / 0.45);
+  --ring: oklch(0.82 0.18 90);
+}
+.dark.theme-retro-arcade {
+  --primary: oklch(0.85 0.18 90);
+  --primary-foreground: oklch(0.12 0.05 90);
+  --primary-glow: oklch(0.9 0.14 85);
+  --accent: oklch(0.7 0.24 340);
+  --accent-foreground: oklch(0.14 0.05 340);
+  --gradient-primary: linear-gradient(135deg, oklch(0.82 0.18 95) 0%, oklch(0.72 0.22 340) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.14 0.06 280) 0%, oklch(0.1 0.04 90) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.14 0.1 280) 0%, oklch(0.08 0.06 90) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.85 0.18 90 / 0.55);
+  --ring: oklch(0.85 0.18 90);
+}
+
+/* 12 — Rose Gold: Elegant rose-gold luxury */
+.theme-rose-gold {
+  --primary: oklch(0.65 0.1 40);
+  --primary-foreground: oklch(0.98 0.005 40);
+  --primary-glow: oklch(0.78 0.08 35);
+  --accent: oklch(0.75 0.08 30);
+  --accent-foreground: oklch(0.18 0.04 30);
+  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.1 45) 0%, oklch(0.72 0.08 30) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(1 0 0) 0%, oklch(0.97 0.01 40) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.97 0.015 40) 0%, oklch(0.99 0.005 35) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.65 0.1 40 / 0.3);
+  --ring: oklch(0.65 0.1 40);
+}
+.dark.theme-rose-gold {
+  --primary: oklch(0.72 0.1 40);
+  --primary-foreground: oklch(0.98 0.005 40);
+  --primary-glow: oklch(0.8 0.08 35);
+  --accent: oklch(0.78 0.08 30);
+  --accent-foreground: oklch(0.14 0.04 30);
+  --gradient-primary: linear-gradient(135deg, oklch(0.65 0.1 45) 0%, oklch(0.75 0.08 30) 100%);
+  --gradient-card: linear-gradient(155deg, oklch(0.18 0.04 40) 0%, oklch(0.14 0.03 35) 100%);
+  --gradient-bg: radial-gradient(ellipse at top, oklch(0.18 0.06 40) 0%, oklch(0.1 0.04 35) 60%);
+  --shadow-glow: 0 0 50px -8px oklch(0.72 0.1 40 / 0.45);
+  --ring: oklch(0.72 0.1 40);
+}
+
 /* ═══════════════════════════════════════════════
    STORE: Animations & Effects
    ═══════════════════════════════════════════════ */

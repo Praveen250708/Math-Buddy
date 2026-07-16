@@ -40,6 +40,8 @@ function LeaderboardPage() {
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [purchases, setPurchases] = useState<string[]>([]);
+
   useEffect(() => {
     globalFn({})
       .then((r) => {
@@ -47,6 +49,11 @@ function LeaderboardPage() {
         setMe(r.me);
       })
       .finally(() => setLoading(false));
+
+    if (typeof window !== "undefined") {
+      const owned = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      setPurchases(owned);
+    }
   }, [globalFn]);
 
   useEffect(() => {
@@ -80,18 +87,49 @@ function LeaderboardPage() {
   ) => {
     const isMe = r.user_id === me;
     const medal = ["🥇", "🥈", "🥉"][idx] ?? `#${idx + 1}`;
+    
+    // Check owned flairs for user
+    const hasCrown = isMe && purchases.includes("flair-gold-crown");
+    const hasVIP = isMe && purchases.includes("flair-vip-badge");
+    const hasRainbow = isMe && purchases.includes("flair-rainbow-name");
+    const hasFireTrail = isMe && purchases.includes("flair-fire-trail");
+    const hasHalo = isMe && purchases.includes("flair-star-halo");
+    const hasWizard = isMe && purchases.includes("flair-math-wizard");
+    const hasCustomTitle = isMe && purchases.includes("flair-custom-title");
+    const hasDiamondFrame = isMe && purchases.includes("flair-diamond-frame");
+
     return (
       <li
         key={r.user_id}
-        className={`flex items-center justify-between gap-4 px-6 py-3 transition-colors ${isMe ? "bg-primary/10" : "hover:bg-muted/20"}`}
+        className={`flex items-center justify-between gap-4 px-6 py-3 transition-colors ${
+          isMe 
+            ? hasDiamondFrame 
+              ? "bg-primary/15 border-y-2 border-dashed border-cyan-400/60 shadow-[0_0_15px_rgba(34,211,238,0.2)]" 
+              : "bg-primary/10" 
+            : "hover:bg-muted/20"
+        }`}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 text-center font-display text-lg">{medal}</div>
+          <div className="w-10 text-center font-display text-lg flex items-center justify-center">
+            {medal}
+            {hasHalo && <span className="absolute text-xs animate-spin duration-1000 mt-[-20px] text-yellow-300">⭐</span>}
+          </div>
           <div>
-            <div className="font-medium">
-              {r.display_name || "Anonymous"}{" "}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`font-medium ${hasRainbow ? "bg-gradient-to-r from-red-500 via-green-500 to-blue-500 bg-clip-text text-transparent font-bold" : ""}`}>
+                {r.display_name || "Anonymous"}
+              </span>
+              {hasCrown && <span title="Gold Crown" className="text-yellow-400">👑</span>}
+              {hasVIP && <span className="text-[10px] bg-purple-600 text-white font-extrabold px-1 rounded shadow-sm">VIP</span>}
+              {hasWizard && <span title="Math Wizard" className="text-xs">🧙‍♂️</span>}
+              {hasFireTrail && <span className="animate-pulse">🔥</span>}
               {isMe && <span className="text-xs text-primary">(you)</span>}
             </div>
+            
+            {hasCustomTitle && (
+              <div className="text-[10px] text-primary/80 font-semibold tracking-wider uppercase">Math Champion 🏆</div>
+            )}
+            
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Flame className="h-3 w-3 text-accent" />
               {r.current_streak} day streak

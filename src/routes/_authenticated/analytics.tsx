@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { 
   BarChart3, Calendar, TrendingUp, AlertTriangle, FileDown, Clock, 
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTopicProgress, getQuizAttempts, getMyProfile } from "@/lib/gamification.functions";
+import { spendPoints } from "@/lib/store.functions";
 import { listExams } from "@/lib/exams.functions";
 import { PageHeader } from "./formulas";
 
@@ -43,6 +44,12 @@ function AnalyticsPage() {
   const attemptsFn = useServerFn(getQuizAttempts);
   const profileFn = useServerFn(getMyProfile);
   const examsFn = useServerFn(listExams);
+  const spendFn = useServerFn(spendPoints);
+
+  const [unlocked, setUnlocked] = useState(false);
+  const [checkingUnlock, setCheckingUnlock] = useState(true);
+  const [points, setPoints] = useState(0);
+  const [unlocking, setUnlocking] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -58,6 +65,47 @@ function AnalyticsPage() {
   const reportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      const isUnlocked = purchases.includes("feature-advanced-stats");
+      setUnlocked(isUnlocked);
+      setCheckingUnlock(false);
+
+      if (!isUnlocked) {
+        profileFn({}).then((res) => {
+          if (res.profile) setPoints(res.profile.total_points ?? 0);
+        });
+      }
+    }
+  }, [profileFn]);
+
+  const handleUnlock = async () => {
+    if (points < 180) {
+      toast.error("Not enough focus points! You need 180 points to unlock Advanced Stats Dashboard.");
+      return;
+    }
+    setUnlocking(true);
+    try {
+      const res = await spendFn({ data: { cost: 180, itemId: "feature-advanced-stats" } });
+      setPoints(res.newBalance);
+
+      const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
+      if (!purchases.includes("feature-advanced-stats")) {
+        purchases.push("feature-advanced-stats");
+        localStorage.setItem("mathbuddy_store_purchases", JSON.stringify(purchases));
+      }
+
+      setUnlocked(true);
+      toast.success("🎉 Advanced Stats Dashboard unlocked successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unlock failed");
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!unlocked) return;
     (async () => {
       setLoading(true);
       try {
@@ -258,6 +306,58 @@ function AnalyticsPage() {
       setDownloading(false);
     }
   };
+
+  if (checkingUnlock) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="space-y-8 max-w-xl mx-auto text-center py-10">
+        <PageHeader
+          icon={<BarChart3 className="h-6 w-6" />}
+          title="Advanced Stats"
+          subtitle="Unlock visual stats, accuracy trend charts, and PDF study reports."
+        />
+        
+        <div className="rounded-2xl border border-border bg-gradient-card p-8 shadow-card space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+            📊
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold font-display">Premium Feature Locked</h3>
+            <p className="text-sm text-muted-foreground">
+              Unlock detailed topic mastery charts, accuracy trends over time, exam readiness forecasts, and downloadable PDF report cards.
+            </p>
+          </div>
+
+          <div className="p-4 bg-muted/50 rounded-xl inline-flex items-center gap-3">
+            <span className="text-sm text-muted-foreground uppercase font-medium">Cost:</span>
+            <span className="text-xl font-bold text-accent">180 pts</span>
+            <span className="text-xs text-muted-foreground">({points} available)</span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button 
+              onClick={handleUnlock} 
+              disabled={unlocking} 
+              className="w-full bg-gradient-primary"
+            >
+              {unlocking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Unlock with Focus Points"}
+            </Button>
+            <Button variant="outline" asChild className="w-full">
+              <Link to="/store">Go to Focus Store</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

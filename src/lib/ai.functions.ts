@@ -220,12 +220,21 @@ export const getImportantQuestions = createServerFn({ method: "POST" })
     const difficultyStr = data.difficulty || "mixed";
     const difficultyInstruction = 
       difficultyStr === "easy" 
-        ? "All questions must be EASY (straightforward conceptual or basic calculations)."
+        ? `All 10 questions must be EASY / BASIC level:
+- Simple definition-based questions (e.g. "What is the derivative of $\\sin(x)$?")
+- Direct formula application with small, clean numbers
+- Fill-in-the-blank or one-step calculation questions
+- "State the formula for..." type questions
+- NO proofs, NO multi-step problems, NO tricky edge cases
+- Think of these as the very first questions a beginner would practice after learning the topic.`
         : difficultyStr === "medium"
-        ? "All questions must be MEDIUM (typical college-level homework/exam questions requiring some application of formulas)."
+        ? "All questions must be MEDIUM (typical homework/exam questions requiring 2-3 step application of formulas, but nothing too tricky)."
         : difficultyStr === "hard"
-        ? "All questions must be HARD (challenging conceptual questions, deep calculations, or proofs)."
-        : "Mix conceptual, computational, and proof-style questions (Easy / Medium / Hard).";
+        ? "All questions must be HARD (challenging conceptual questions, multi-step problems, proofs, or tricky edge cases)."
+        : `Mix of difficulties:
+- Questions 1-4: EASY (basic definitions, direct formula plug-in, one-step calculations)
+- Questions 5-7: MEDIUM (2-3 step problems, formula application)
+- Questions 8-10: HARD (proofs, multi-step, conceptual)`;
 
     const content = await callAI(
       `You are an expert ${LEVEL} tutor and exam-question curator.
@@ -262,12 +271,21 @@ export const generateQuiz = createServerFn({ method: "POST" })
     const difficultyStr = data.difficulty || "mixed";
     const difficultyInstruction = 
       difficultyStr === "easy" 
-        ? "All questions must be at an EASY level (straightforward conceptual or basic calculations)."
+        ? `All questions must be at an EASY / BASIC level:
+- Simple definition or concept-check questions
+- Direct formula application with small, clean numbers (e.g. "What is the value of $\\sin(30°)$?")
+- One-step calculations only
+- Distractors should be clearly wrong but plausible (common mistakes like sign errors)
+- NO multi-step problems, NO proofs, NO tricky edge cases
+- A student who just learned the topic basics should be able to answer these.`
         : difficultyStr === "medium"
-        ? "All questions must be at a MEDIUM level (typical college-level homework/exam questions requiring some application of formulas)."
+        ? "All questions must be at a MEDIUM level (typical homework/exam questions requiring 2-3 steps of formula application)."
         : difficultyStr === "hard"
-        ? "All questions must be at a HARD level (challenging conceptual questions, deep calculations, or mathematical proofs)."
-        : "Mix Easy/Medium/Hard questions.";
+        ? "All questions must be at a HARD level (challenging conceptual questions, multi-step problems, or proofs)."
+        : `Mix difficulties:
+- Questions 1-4: EASY (basic definitions, direct plug-in, one-step)
+- Questions 5-7: MEDIUM (2-3 step problems)
+- Questions 8-10: HARD (multi-step, proofs, conceptual).`;
 
     const raw = await callAI(
       `You are a ${LEVEL} quiz generator. Generate exactly 10 multiple-choice questions on the given topic.
@@ -300,7 +318,7 @@ export const getDailyChallenge = createServerFn({ method: "POST" })
     }
     
     const content = await callAI(
-      `You are a ${LEVEL} tutor. Output a single fun, medium-difficulty math problem suitable as a "problem of the day". Use real LaTeX ($...$ inline, $$...$$ display). Format as Markdown:
+      `You are a ${LEVEL} tutor. Output a single fun, EASY-to-MEDIUM difficulty math problem suitable as a "problem of the day". The problem should be approachable — a student with basic knowledge of the topic should be able to attempt it. Use simple numbers and straightforward applications. Use real LaTeX ($...$ inline, $$...$$ display). Format as Markdown:
 **Problem:** the problem statement
 **Hint:** one short hint
 Do not give the solution. Keep total under 80 words.`,
