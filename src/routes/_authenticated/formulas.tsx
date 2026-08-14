@@ -13,6 +13,7 @@ import { spendPoints } from "@/lib/store.functions";
 import { MarkdownView } from "@/components/markdown-view";
 import { consumePrefilledTopic } from "@/lib/topic-prefill";
 import { VoiceOverlay } from "@/components/voice-overlay";
+import { checkIsPremium } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/_authenticated/formulas")({
   component: FormulasPage,
@@ -40,15 +41,25 @@ function FormulasPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
-      const isUnlocked = purchases.includes("feature-formula-notebook");
-      setUnlocked(isUnlocked);
-      setCheckingUnlock(false);
+      const isPurchased = purchases.includes("feature-formula-notebook");
 
-      if (!isUnlocked) {
-        profileFn({}).then((res) => {
-          if (res.profile) setPoints(res.profile.total_points ?? 0);
-        });
-      }
+      profileFn({}).then((res) => {
+        if (res.profile) {
+          setPoints(res.profile.total_points ?? 0);
+          const isPremiumOrAdmin = checkIsPremium(res.profile);
+          if (isPremiumOrAdmin || isPurchased) {
+            setUnlocked(true);
+          } else {
+            setUnlocked(false);
+          }
+        } else {
+          setUnlocked(isPurchased);
+        }
+        setCheckingUnlock(false);
+      }).catch(() => {
+        setUnlocked(isPurchased);
+        setCheckingUnlock(false);
+      });
     }
   }, [profileFn]);
 

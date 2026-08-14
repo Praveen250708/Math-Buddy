@@ -131,6 +131,9 @@ export type Database = {
           total_points: number
           updated_at: string
           user_id: string
+          role: string
+          is_premium: boolean
+          premium_until: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -143,6 +146,9 @@ export type Database = {
           total_points?: number
           updated_at?: string
           user_id: string
+          role?: string
+          is_premium?: boolean
+          premium_until?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -155,6 +161,9 @@ export type Database = {
           total_points?: number
           updated_at?: string
           user_id?: string
+          role?: string
+          is_premium?: boolean
+          premium_until?: string | null
         }
         Relationships: []
       }

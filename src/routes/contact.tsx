@@ -29,8 +29,8 @@ function ContactPage() {
         <div className="mt-8 space-y-4">
           <div className="rounded-xl border border-border bg-card/40 p-5">
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</div>
-            <a className="mt-1 block text-lg font-medium text-primary hover:underline" href="mailto:spraveenkumar2507@gmail.com">
-              spraveenkumar2507@gmail.com
+            <a className="mt-1 block text-lg font-medium text-primary hover:underline" href="mailto:ourproject@gmail.com">
+              ourproject@gmail.com
             </a>
           </div>
           <div className="rounded-xl border border-border bg-card/40 p-5">

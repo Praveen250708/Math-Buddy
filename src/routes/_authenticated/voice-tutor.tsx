@@ -28,6 +28,7 @@ import { MarkdownView } from "@/components/markdown-view";
 import { queryVoiceTutor } from "@/lib/ai.functions";
 import { getMyProfile } from "@/lib/gamification.functions";
 import { spendPoints } from "@/lib/store.functions";
+import { checkIsPremium } from "@/lib/auth-helpers";
 
 
 export const Route = createFileRoute("/_authenticated/voice-tutor")({
@@ -44,7 +45,7 @@ type ChatMessage = {
 
 const SpeechRecognition =
   typeof window !== "undefined"
-    ? (window.SpeechRecognition || (window as any).webkitSpeechRecognition)
+    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
     : null;
 
 /* ───────────────────────── Siri Orb Component ───────────────────────── */
@@ -299,15 +300,25 @@ function VoiceTutorPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
-      const isUnlocked = purchases.includes("feature-voice-tutor");
-      setUnlocked(isUnlocked);
-      setCheckingUnlock(false);
+      const isPurchased = purchases.includes("feature-voice-tutor");
 
-      if (!isUnlocked) {
-        profileFn({}).then((res) => {
-          if (res.profile) setPoints(res.profile.total_points ?? 0);
-        });
-      }
+      profileFn({}).then((res) => {
+        if (res.profile) {
+          setPoints(res.profile.total_points ?? 0);
+          const isPremiumOrAdmin = checkIsPremium(res.profile);
+          if (isPremiumOrAdmin || isPurchased) {
+            setUnlocked(true);
+          } else {
+            setUnlocked(false);
+          }
+        } else {
+          setUnlocked(isPurchased);
+        }
+        setCheckingUnlock(false);
+      }).catch(() => {
+        setUnlocked(isPurchased);
+        setCheckingUnlock(false);
+      });
     }
   }, [profileFn]);
 

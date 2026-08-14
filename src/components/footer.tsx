@@ -31,8 +31,8 @@ export function Footer() {
           <h4 className="font-display font-semibold">Stay in touch</h4>
           <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
             <li>
-              <a href="mailto:spraveenkumar2507@gmail.com" className="hover:text-foreground">
-                spraveenkumar2507@gmail.com
+              <a href="mailto:ourproject@gmail.com" className="hover:text-foreground">
+                ourproject@gmail.com
               </a>
             </li>
             <li>
@@ -42,7 +42,7 @@ export function Footer() {
             </li>
           </ul>
           <div className="mt-3 flex gap-2">
-            <a href="mailto:spraveenkumar2507@gmail.com" aria-label="Email" className="rounded-full border border-border p-2 hover:bg-muted">
+            <a href="mailto:ourproject@gmail.com" aria-label="Email" className="rounded-full border border-border p-2 hover:bg-muted">
               <Mail className="h-4 w-4" />
             </a>
             <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter" className="rounded-full border border-border p-2 hover:bg-muted">

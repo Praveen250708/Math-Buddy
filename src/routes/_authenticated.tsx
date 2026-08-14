@@ -4,8 +4,9 @@ import {
   redirect,
   Outlet,
   useNavigate,
+  Link,
 } from "@tanstack/react-router";
-import { LogOut, Trophy, Flame, Download, Loader2, Sigma } from "lucide-react";
+import { LogOut, Trophy, Flame, Download, Loader2, Sigma, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +44,7 @@ function AuthLayout() {
   const [streak, setStreak] = useState<number>(0);
   const [streakFreezes, setStreakFreezes] = useState<number>(2);
   const [downloading, setDownloading] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
   const onDownloadZip = async () => {
     setDownloading(true);
@@ -85,6 +87,7 @@ function AuthLayout() {
       try {
         const res = await getProfileFn({});
         if (active && res.profile) {
+          setProfile(res.profile);
           setPoints(res.profile.total_points);
           setStreak(res.profile.current_streak);
         }
@@ -102,6 +105,7 @@ function AuthLayout() {
 
   const onLogout = async () => {
     localStorage.removeItem("guest-login");
+    localStorage.removeItem("mock-user-email");
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
@@ -132,6 +136,7 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
+
                <ThemeToggle />
                <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
                  <LogOut className="h-4 w-4" />

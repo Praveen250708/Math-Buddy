@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Trophy,
@@ -15,6 +15,7 @@ import {
   RotateCcw,
   TrendingDown,
   CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ function Dashboard() {
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [longest, setLongest] = useState(0);
+  const [role, setRole] = useState("");
   const [challenge, setChallenge] = useState<string>("");
   const [loadingChallenge, setLoadingChallenge] = useState(true);
   const [achievements, setAchievements] = useState<{ code: string; earned_at: string }[]>([]);
@@ -106,6 +108,7 @@ function Dashboard() {
         setPoints(profile.total_points);
         setStreak(profile.current_streak ?? 0);
         setLongest(profile.longest_streak ?? 0);
+        setRole(profile.role ?? "user");
       } else if (typeof window !== "undefined" && localStorage.getItem("guest-login") === "true") {
         setName("guest");
       }
@@ -148,6 +151,26 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Admin Authorization Banner */}
+      {role === "admin" && (
+        <div className="rounded-2xl border border-primary/50 bg-gradient-to-r from-primary/20 via-background to-accent/20 px-6 py-4 shadow-glow flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary-glow shrink-0">
+              <ShieldCheck className="h-5.5 w-5.5 text-primary animate-pulse" />
+            </div>
+            <div>
+              <h2 className="font-display text-sm font-bold text-foreground">You are logged in as Administrator</h2>
+              <p className="text-xs text-muted-foreground">Access live system monitoring, edit premium subscription pricing, and manage study profile records.</p>
+            </div>
+          </div>
+          <Link to="/admin">
+            <Button size="sm" className="bg-gradient-primary shadow-glow font-bold shrink-0">
+              Open Admin Portal →
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Hero / welcome section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-2xl border border-border bg-gradient-card px-6 py-5 shadow-card">
         {/* Left: greeting + CTA button */}

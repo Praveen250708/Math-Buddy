@@ -60,7 +60,6 @@ const TIME_WARP_KEY = "mathbuddy_time_warps";
 const XP_MAGNET_KEY = "mathbuddy_xp_magnet_until";
 const LUCKY_CHARM_KEY = "mathbuddy_lucky_charms";
 const FOCUS_BOOSTER_KEY = "mathbuddy_focus_booster_until";
-
 type StoreCategory = "themes" | "powerups" | "features" | "flair";
 
 interface StoreItem {
@@ -741,6 +740,7 @@ function Store() {
             ))}
           </div>
         </TabsContent>
+
       </Tabs>
 
       {/* ── How to earn section ── */}
