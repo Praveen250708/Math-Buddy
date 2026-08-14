@@ -29,6 +29,7 @@ import { queryVoiceTutor } from "@/lib/ai.functions";
 import { getMyProfile } from "@/lib/gamification.functions";
 import { spendPoints } from "@/lib/store.functions";
 import { checkIsPremium } from "@/lib/auth-helpers";
+import { getSystemSettings } from "@/lib/admin.functions";
 
 
 export const Route = createFileRoute("/_authenticated/voice-tutor")({
@@ -278,11 +279,13 @@ function VoiceTutorPage() {
   const voiceTutorFn = useServerFn(queryVoiceTutor);
   const profileFn = useServerFn(getMyProfile);
   const spendFn = useServerFn(spendPoints);
+  const getSettingsFn = useServerFn(getSystemSettings);
 
   const [unlocked, setUnlocked] = useState(false);
   const [points, setPoints] = useState(0);
   const [unlocking, setUnlocking] = useState(false);
   const [checkingUnlock, setCheckingUnlock] = useState(true);
+  const [settings, setSettings] = useState<any>(null);
 
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -319,8 +322,14 @@ function VoiceTutorPage() {
         setUnlocked(isPurchased);
         setCheckingUnlock(false);
       });
+
+      getSettingsFn({}).then((res) => {
+        if (res.settings) setSettings(res.settings);
+      }).catch(() => {});
     }
-  }, [profileFn]);
+  }, [profileFn, getSettingsFn]);
+
+
 
   const handleUnlock = async () => {
     if (points < 150) {
@@ -538,6 +547,46 @@ function VoiceTutorPage() {
     "Explain Bayes' Theorem like I'm 5",
     "What is a matrix determinant?",
   ];
+
+  if (settings && !settings.voiceTutorEnabled) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary-glow">
+            <Bot className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="font-display text-xl font-bold md:text-2xl">AI Voice Tutor</h1>
+            <p className="text-xs text-muted-foreground">Interactive spoken math helper.</p>
+          </div>
+        </div>
+ 
+        <div className="rounded-2xl border border-border bg-gradient-card p-12 text-center space-y-6 max-w-2xl mx-auto mt-12 shadow-card animate-in fade-in zoom-in duration-300">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+            <span className="text-3xl animate-pulse">🔒</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl font-bold">Voice Services Offline</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+              The administrator has temporarily paused the Voice Tutor services for scheduled system maintenance. Please explore our other tools or try again later.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Link to="/dashboard">
+              <Button variant="outline" className="border-border/60 hover:bg-muted font-bold text-xs">
+                Back to Dashboard
+              </Button>
+            </Link>
+            <Link to="/solver">
+              <Button className="bg-gradient-primary font-bold text-xs">
+                Go to Text Solver
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (checkingUnlock) {
     return (

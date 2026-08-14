@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Loader2, Bookmark, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { solveQuestionPaper } from "@/lib/ai.functions";
 import { addBookmark } from "@/lib/bookmarks.functions";
 import { PageHeader, ResultPanel } from "./formulas";
+import { getSystemSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/paper-solver")({
   component: PaperSolverPage,
@@ -16,12 +17,20 @@ export const Route = createFileRoute("/_authenticated/paper-solver")({
 function PaperSolverPage() {
   const solvePaperFn = useServerFn(solveQuestionPaper);
   const bookmarkFn = useServerFn(addBookmark);
+  const getSettingsFn = useServerFn(getSystemSettings);
 
   const [file, setFile] = useState<{ name: string; mimeType: string; data: string } | null>(null);
   const [mode, setMode] = useState<"solve" | "extract" | "concepts">("solve");
   const [notes, setNotes] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    getSettingsFn({}).then((res) => {
+      if (res.settings) setSettings(res.settings);
+    }).catch(() => {});
+  }, [getSettingsFn]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -102,6 +111,41 @@ function PaperSolverPage() {
       toast.error(err instanceof Error ? err.message : "Failed to save bookmark.");
     }
   };
+
+  if (settings && !settings.paperSolverEnabled) {
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          icon={<FileText className="h-6 w-6" />}
+          title="Question Paper Solver"
+          subtitle="Instant solutions, transcription, or concept guides from uploaded files."
+        />
+        <div className="rounded-2xl border border-border bg-gradient-card p-12 text-center space-y-6 max-w-2xl mx-auto mt-12 shadow-card animate-in fade-in zoom-in duration-300">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+            <span className="text-3xl animate-pulse">🔒</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl font-bold">Feature Temporarily Paused</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+              The administrator has temporarily paused the Question Paper Solver for scheduled system updates. Please explore other tools or try again later.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Link to="/dashboard">
+              <Button variant="outline" className="border-border/60 hover:bg-muted font-bold text-xs">
+                Back to Dashboard
+              </Button>
+            </Link>
+            <Link to="/solver">
+              <Button className="bg-gradient-primary font-bold text-xs">
+                Go to Text Solver
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

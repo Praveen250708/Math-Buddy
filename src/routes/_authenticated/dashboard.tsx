@@ -31,6 +31,7 @@ import { getClientUser } from "@/lib/auth-helpers";
 import { prefilledTopicKey } from "@/lib/topic-prefill";
 import { BadgeGrid } from "@/components/badge-share-card";
 import { StreakRing } from "@/components/streak-ring";
+import { getSystemSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -59,6 +60,7 @@ function Dashboard() {
   const examsFn = useServerFn(listExams);
   const profileFn = useServerFn(getMyProfile);
   const reviewCountFn = useServerFn(getDueReviewCount);
+  const getSettingsFn = useServerFn(getSystemSettings);
 
   const [name, setName] = useState("");
   const [userId, setUserId] = useState("");
@@ -73,6 +75,7 @@ function Dashboard() {
   const [nextExam, setNextExam] = useState<{ name: string; exam_date: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewCount, setReviewCount] = useState(0);
+  const [settings, setSettings] = useState<any>(null);
 
   // Daily goal
   const [dailyGoal, setDailyGoal] = useState<number>(() => {
@@ -95,12 +98,13 @@ function Dashboard() {
       setUserId(uid);
       setTodaySolved(getTodaySolvedCount(uid));
 
-      const [profRes, ach, prog, ex, rc] = await Promise.all([
+      const [profRes, ach, prog, ex, rc, setRes] = await Promise.all([
         profileFn({}).catch(() => ({ profile: null })),
         achievementsFn({}).catch(() => ({ achievements: [] })),
         progressFn({}).catch(() => ({ progress: [] })),
         examsFn({}).catch(() => ({ exams: [] })),
         reviewCountFn({}).catch(() => ({ count: 0 })),
+        getSettingsFn({}).catch(() => ({ settings: null })),
       ]);
       const profile = profRes.profile;
       if (profile) {
@@ -117,6 +121,7 @@ function Dashboard() {
       const upcoming = (ex.exams ?? []).find((e: any) => new Date(e.exam_date) >= new Date());
       setNextExam(upcoming ?? null);
       setReviewCount(rc.count ?? 0);
+      if (setRes.settings) setSettings(setRes.settings);
       setLoading(false);
     })();
 
@@ -124,7 +129,7 @@ function Dashboard() {
       .then((r) => setChallenge(r.content))
       .catch(() => setChallenge("**Problem:** Could not load today's challenge. Try refreshing."))
       .finally(() => setLoadingChallenge(false));
-  }, [achievementsFn, challengeFn, progressFn, examsFn, profileFn, reviewCountFn]);
+  }, [achievementsFn, challengeFn, progressFn, examsFn, profileFn, reviewCountFn, getSettingsFn]);
 
   const totalAttempted = progress.reduce((a, p) => a + p.questions_attempted, 0);
   const totalCorrect = progress.reduce((a, p) => a + p.questions_correct, 0);
@@ -138,10 +143,10 @@ function Dashboard() {
   const weakTopic = progress
     .filter((p) => p.questions_attempted >= 3)
     .map((p) => ({
-      ...p,
-      accuracy: Math.round((p.questions_correct / p.questions_attempted) * 100),
+      topic: p.topic,
+      pct: Math.round((p.questions_correct / p.questions_attempted) * 100),
     }))
-    .sort((a, b) => a.accuracy - b.accuracy)[0] ?? null;
+    .sort((a, b) => a.pct - b.pct)[0] ?? null;
 
   const handlePracticeTopic = (topic: string) => {
     if (typeof window !== "undefined") {
@@ -151,6 +156,31 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {/* System Announcement Banner */}
+      {settings?.announcementEnabled && settings?.announcementText && (
+        <div className="rounded-2xl border border-accent/40 bg-accent/5 backdrop-blur px-6 py-4 shadow-card flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3">
+            <div className={`h-6 px-2.5 rounded-lg flex items-center justify-center text-[10px] font-extrabold tracking-wider uppercase shrink-0 border ${
+              settings.announcementBadge === "ALERT" 
+                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                : settings.announcementBadge === "UPDATE"
+                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+            }`}>
+              {settings.announcementBadge}
+            </div>
+            <p className="text-xs sm:text-sm font-semibold text-foreground">{settings.announcementText}</p>
+          </div>
+          {settings.announcementLink && (
+            <Link to={settings.announcementLink}>
+              <Button size="sm" variant="secondary" className="h-8 text-xs font-bold shrink-0">
+                View Details
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Admin Authorization Banner */}
       {role === "admin" && (
         <div className="rounded-2xl border border-primary/50 bg-gradient-to-r from-primary/20 via-background to-accent/20 px-6 py-4 shadow-glow flex flex-wrap items-center justify-between gap-4">

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { 
   Camera, Upload, Crop, Sparkles, Play, Pause, Square, Bookmark, 
@@ -15,6 +15,7 @@ import { getClientUser, checkIsPremium } from "@/lib/auth-helpers";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { PageHeader } from "./formulas";
 import { MarkdownView } from "@/components/markdown-view";
+import { getSystemSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/snap-solve")({
   component: SnapSolvePage,
@@ -42,7 +43,9 @@ function SnapSolvePage() {
   const historyFn = useServerFn(savePracticeAttempt);
   const speechFn = useServerFn(getSpeechAudio);
   const profileFn = useServerFn(getMyProfile);
+  const getSettingsFn = useServerFn(getSystemSettings);
   const [profile, setProfile] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   // User details
@@ -116,6 +119,10 @@ function SnapSolvePage() {
         });
       }
     });
+
+    getSettingsFn({}).then((res) => {
+      if (res.settings) setSettings(res.settings);
+    }).catch(() => {});
 
     return () => {
       stopCamera();
@@ -511,6 +518,41 @@ function SnapSolvePage() {
     }
     setSpeakingStep(null);
   };
+
+  if (settings && !settings.snapSolveEnabled) {
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          icon={<Camera className="h-6 w-6" />}
+          title="Snap to Solve"
+          subtitle="Instant math solver from a simple photograph or snapshot."
+        />
+        <div className="rounded-2xl border border-border bg-gradient-card p-12 text-center space-y-6 max-w-2xl mx-auto mt-12 shadow-card animate-in fade-in zoom-in duration-300">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+            <span className="text-3xl animate-pulse">🔒</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl font-bold">Feature Temporarily Paused</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+              The administrator has temporarily paused the Snap to Solve feature for system updates. Please explore other tools or try again later.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Link to="/dashboard">
+              <Button variant="outline" className="border-border/60 hover:bg-muted font-bold text-xs">
+                Back to Dashboard
+              </Button>
+            </Link>
+            <Link to="/solver">
+              <Button className="bg-gradient-primary font-bold text-xs">
+                Use Text Solver
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">

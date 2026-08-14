@@ -60,22 +60,37 @@ const trackItems = [
   { to: "/store", label: "Store", icon: ShoppingBag },
 ] as const;
 
+import { getSystemSettings } from "@/lib/admin.functions";
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (p: string) => path === p || path.startsWith(p + "/");
 
   const profileFn = useServerFn(getMyProfile);
+  const getSettingsFn = useServerFn(getSystemSettings);
+  
   const [profile, setProfile] = useState<any>(null);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
     profileFn({}).then((res) => {
       if (res.profile) setProfile(res.profile);
     }).catch(() => {});
-  }, [profileFn]);
 
-  const isPremiumOrAdmin = profile?.role === "admin" || profile?.is_premium;
+    getSettingsFn({}).then((res) => {
+      if (res.settings) setSettings(res.settings);
+    }).catch(() => {});
+  }, [profileFn, getSettingsFn]);
+
+  const isItemDisabled = (to: string) => {
+    if (!settings) return false;
+    if (to === "/voice-tutor" && !settings.voiceTutorEnabled) return true;
+    if (to === "/snap-solve" && !settings.snapSolveEnabled) return true;
+    if (to === "/graph-solver" && !settings.graphSolverEnabled) return true;
+    if (to === "/paper-solver" && !settings.paperSolverEnabled) return true;
+    return false;
+  };
 
   return (
     <>
@@ -86,16 +101,26 @@ export function AppSidebar() {
             <SidebarGroupLabel>Study</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {studyItems.map((item) => (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
-                      <Link to={item.to} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span className="sidebar-text">{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {studyItems.map((item) => {
+                  const disabled = isItemDisabled(item.to);
+                  return (
+                    <SidebarMenuItem key={item.to} className={disabled ? "opacity-50 pointer-events-none select-none" : ""}>
+                      <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
+                        <Link to={disabled ? "/dashboard" : item.to} className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          <span className="sidebar-text flex-1 flex items-center justify-between">
+                            <span>{item.label}</span>
+                            {disabled && (
+                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/25 uppercase tracking-wide">
+                                Offline
+                              </span>
+                            )}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
