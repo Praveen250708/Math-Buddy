@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { performMathOcr, solveMathProblemWithAi, getSpeechAudio } from "@/lib/ai.functions";
 import { addBookmark } from "@/lib/bookmarks.functions";
-import { savePracticeAttempt } from "@/lib/gamification.functions";
-import { getClientUser } from "@/lib/auth-helpers";
+import { savePracticeAttempt, getMyProfile } from "@/lib/gamification.functions";
+import { getClientUser, checkIsPremium } from "@/lib/auth-helpers";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import { PageHeader } from "./formulas";
 import { MarkdownView } from "@/components/markdown-view";
 
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/_authenticated/snap-solve")({
   component: SnapSolvePage,
 });
 
-// Enforce 10 solves/day rate limit
-const DAILY_LIMIT = 10;
+// Enforce 30 solves/day rate limit
+const DAILY_LIMIT = 30;
 
 interface SolvedStep {
   title: string;
@@ -40,6 +41,9 @@ function SnapSolvePage() {
   const bookmarkFn = useServerFn(addBookmark);
   const historyFn = useServerFn(savePracticeAttempt);
   const speechFn = useServerFn(getSpeechAudio);
+  const profileFn = useServerFn(getMyProfile);
+  const [profile, setProfile] = useState<any>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   // User details
   const [userId, setUserId] = useState<string>("guest-id-123456");
@@ -96,7 +100,20 @@ function SnapSolvePage() {
       if (res.data?.user) {
         const uid = res.data.user.id;
         setUserId(uid);
-        checkLimit(uid);
+        
+        profileFn({}).then((profRes) => {
+          if (profRes.profile) {
+            setProfile(profRes.profile);
+            const isPremiumOrAdmin = checkIsPremium(profRes.profile);
+            if (isPremiumOrAdmin) {
+              setLimitHit(false);
+            } else {
+              checkLimit(uid, profRes.profile);
+            }
+          } else {
+            checkLimit(uid, null);
+          }
+        });
       }
     });
 
@@ -106,7 +123,13 @@ function SnapSolvePage() {
     };
   }, []);
 
-  const checkLimit = (uid: string) => {
+  const checkLimit = (uid: string, userProf: any = null) => {
+    const activeProf = userProf || profile;
+    const isPremiumOrAdmin = checkIsPremium(activeProf);
+    if (isPremiumOrAdmin) {
+      setLimitHit(false);
+      return;
+    }
     const today = new Date().toISOString().slice(0, 10);
     const key = `mathbuddy_solves_${uid}_${today}`;
     const count = Number(localStorage.getItem(key) || "0");
@@ -119,6 +142,9 @@ function SnapSolvePage() {
   };
 
   const incrementLimit = () => {
+    const isPremiumOrAdmin = checkIsPremium(profile);
+    if (isPremiumOrAdmin) return;
+
     const today = new Date().toISOString().slice(0, 10);
     const key = `mathbuddy_solves_${userId}_${today}`;
     const newCount = solveCount + 1;
@@ -502,8 +528,8 @@ function SnapSolvePage() {
             You've completed your {DAILY_LIMIT} free photo solves for today. 
             Upgrade to Math Buddy Pro to unlock unlimited solves, advanced graphing, and ad-free worksheets.
           </p>
-          <Button className="bg-gradient-primary w-full max-w-xs font-semibold">
-            Upgrade to Pro (Coming Soon)
+          <Button onClick={() => setUpgradeOpen(true)} className="bg-gradient-primary w-full max-w-xs font-semibold shadow-glow">
+            Upgrade to Pro
           </Button>
         </div>
       )}
@@ -977,6 +1003,7 @@ function SnapSolvePage() {
 
         </div>
       )}
+      <UpgradeModal isOpen={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { getTopicProgress, getQuizAttempts, getMyProfile } from "@/lib/gamificat
 import { spendPoints } from "@/lib/store.functions";
 import { listExams } from "@/lib/exams.functions";
 import { PageHeader } from "./formulas";
+import { checkIsPremium } from "@/lib/auth-helpers";
 
 // Recharts components
 import { 
@@ -67,15 +68,25 @@ function AnalyticsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
-      const isUnlocked = purchases.includes("feature-advanced-stats");
-      setUnlocked(isUnlocked);
-      setCheckingUnlock(false);
+      const isPurchased = purchases.includes("feature-advanced-stats");
 
-      if (!isUnlocked) {
-        profileFn({}).then((res) => {
-          if (res.profile) setPoints(res.profile.total_points ?? 0);
-        });
-      }
+      profileFn({}).then((res) => {
+        if (res.profile) {
+          setPoints(res.profile.total_points ?? 0);
+          const isPremiumOrAdmin = checkIsPremium(res.profile);
+          if (isPremiumOrAdmin || isPurchased) {
+            setUnlocked(true);
+          } else {
+            setUnlocked(false);
+          }
+        } else {
+          setUnlocked(isPurchased);
+        }
+        setCheckingUnlock(false);
+      }).catch(() => {
+        setUnlocked(isPurchased);
+        setCheckingUnlock(false);
+      });
     }
   }, [profileFn]);
 
@@ -486,7 +497,7 @@ function AnalyticsPage() {
               {radarData.length > 0 ? (
                 <div className="w-full h-[260px] flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" radius="80%" data={radarData}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                       <PolarGrid stroke="#1e293b" />
                       <PolarAngleAxis dataKey="subject" tick={{ fill: "#94a3b8", fontSize: 10 }} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 9 }} />

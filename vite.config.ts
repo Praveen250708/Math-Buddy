@@ -8,6 +8,7 @@ export default defineConfig({
   vite: {
     server: {
       host: true,
+      port: 8000,
       allowedHosts: [
         "math-buddy-2xsw.onrender.com",
         ".onrender.com"

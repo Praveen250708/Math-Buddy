@@ -245,7 +245,7 @@ export const getMyProfile = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, total_points, current_streak, longest_streak, avatar_url")
+      .select("display_name, total_points, current_streak, longest_streak, avatar_url, role, is_premium")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) throw error;
@@ -258,6 +258,8 @@ export const getMyProfile = createServerFn({ method: "POST" })
         current_streak: 0,
         longest_streak: 0,
         avatar_url: null,
+        role: userId === "admin-id-999999" ? "admin" : "user",
+        is_premium: userId === "admin-id-999999",
       };
       
       const { data: newProfile, error: createError } = await supabase

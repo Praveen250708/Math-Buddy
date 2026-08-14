@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { FloatingMath } from "@/components/floating-math";
 import { getClientSession } from "@/lib/auth-helpers";
+import { getMyProfile } from "@/lib/gamification.functions";
 import { Footer } from "@/components/footer";
 
 export const Route = createFileRoute("/")({

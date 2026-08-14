@@ -24,8 +24,20 @@ function createSupabaseClient() {
             onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
             getSession: async () => ({ data: { session: null }, error: null }),
             getUser: async () => ({ data: { user: null }, error: null }),
-            signInWithPassword: async () => { throw new Error("Mock login error: Connect Supabase to sign in with email."); },
-            signUp: async () => { throw new Error("Mock signup error: Connect Supabase to create an email account."); },
+            signInWithPassword: async ({ email }: any) => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('mock-user-email', email);
+                localStorage.removeItem('guest-login');
+              }
+              return { data: { user: { email }, session: { access_token: email === 'ourproject@gmail.com' ? 'mock-admin-token' : 'mock-token' } }, error: null };
+            },
+            signUp: async ({ email }: any) => {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('mock-user-email', email);
+                localStorage.removeItem('guest-login');
+              }
+              return { data: { user: { email }, session: { access_token: email === 'ourproject@gmail.com' ? 'mock-admin-token' : 'mock-token' } }, error: null };
+            },
             signInWithOAuth: async () => { throw new Error("Mock OAuth error: Connect Supabase to sign in with Google."); },
           };
         }

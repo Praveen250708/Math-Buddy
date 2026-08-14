@@ -25,6 +25,7 @@ import { Route as AuthenticatedSnapSolveRouteImport } from './routes/_authentica
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated/questions'
+import { Route as AuthenticatedPremiumRouteImport } from './routes/_authenticated/premium'
 import { Route as AuthenticatedPaperSolverRouteImport } from './routes/_authenticated/paper-solver'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedGraphSolverRouteImport } from './routes/_authenticated/graph-solver'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDailyChallengeRouteImport } from './routes/_authenticated/daily-challenge'
 import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -114,6 +116,11 @@ const AuthenticatedQuestionsRoute = AuthenticatedQuestionsRouteImport.update({
   path: '/questions',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPremiumRoute = AuthenticatedPremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPaperSolverRoute =
   AuthenticatedPaperSolverRouteImport.update({
     id: '/paper-solver',
@@ -164,6 +171,11 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -172,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/daily-challenge': typeof AuthenticatedDailyChallengeRoute
@@ -181,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/premium': typeof AuthenticatedPremiumRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -198,6 +212,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/bookmarks': typeof AuthenticatedBookmarksRoute
   '/daily-challenge': typeof AuthenticatedDailyChallengeRoute
@@ -207,6 +222,7 @@ export interface FileRoutesByTo {
   '/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/premium': typeof AuthenticatedPremiumRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -226,6 +242,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
   '/_authenticated/daily-challenge': typeof AuthenticatedDailyChallengeRoute
@@ -235,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/_authenticated/premium': typeof AuthenticatedPremiumRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
@@ -254,6 +272,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/admin'
     | '/analytics'
     | '/bookmarks'
     | '/daily-challenge'
@@ -263,6 +282,7 @@ export interface FileRouteTypes {
     | '/graph-solver'
     | '/leaderboard'
     | '/paper-solver'
+    | '/premium'
     | '/questions'
     | '/quiz'
     | '/review'
@@ -280,6 +300,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/admin'
     | '/analytics'
     | '/bookmarks'
     | '/daily-challenge'
@@ -289,6 +310,7 @@ export interface FileRouteTypes {
     | '/graph-solver'
     | '/leaderboard'
     | '/paper-solver'
+    | '/premium'
     | '/questions'
     | '/quiz'
     | '/review'
@@ -307,6 +329,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/_authenticated/admin'
     | '/_authenticated/analytics'
     | '/_authenticated/bookmarks'
     | '/_authenticated/daily-challenge'
@@ -316,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/graph-solver'
     | '/_authenticated/leaderboard'
     | '/_authenticated/paper-solver'
+    | '/_authenticated/premium'
     | '/_authenticated/questions'
     | '/_authenticated/quiz'
     | '/_authenticated/review'
@@ -451,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuestionsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/premium': {
+      id: '/_authenticated/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof AuthenticatedPremiumRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/paper-solver': {
       id: '/_authenticated/paper-solver'
       path: '/paper-solver'
@@ -514,10 +545,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
   AuthenticatedDailyChallengeRoute: typeof AuthenticatedDailyChallengeRoute
@@ -527,6 +566,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGraphSolverRoute: typeof AuthenticatedGraphSolverRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedPaperSolverRoute: typeof AuthenticatedPaperSolverRoute
+  AuthenticatedPremiumRoute: typeof AuthenticatedPremiumRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
@@ -539,6 +579,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
   AuthenticatedDailyChallengeRoute: AuthenticatedDailyChallengeRoute,
@@ -548,6 +589,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGraphSolverRoute: AuthenticatedGraphSolverRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedPaperSolverRoute: AuthenticatedPaperSolverRoute,
+  AuthenticatedPremiumRoute: AuthenticatedPremiumRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,

@@ -1,0 +1,8 @@
+{
+  "voiceTutorEnabled": true,
+  "solveLimitEnforced": true,
+  "maintenanceMode": false,
+  "xpMultiplier": 1,
+  "premiumMonthlyPrice": 200000,
+  "premiumAnnualPrice": 1000
+}

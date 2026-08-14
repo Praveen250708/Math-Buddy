@@ -9,8 +9,8 @@ import type { Database } from './types'
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     const hasSupabase = !!(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
     
     const request = getRequest();
@@ -34,8 +34,27 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Error('Unauthorized: No token provided');
     }
 
-    if (token === 'mock-token' || !hasSupabase) {
-      const mockUserId = '00000000-0000-0000-0000-000000000000';
+    if (token === 'mock-token' || token === 'mock-admin-token' || !hasSupabase) {
+      let mockUserId = '00000000-0000-0000-0000-000000000000';
+      let mockEmail = 'guest.mathbuddy@gmail.com';
+
+      if (token === 'mock-admin-token') {
+        mockUserId = 'admin-id-999999';
+        mockEmail = 'ourproject@gmail.com';
+      } else if (token !== 'mock-token') {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+            if (payload.sub) mockUserId = payload.sub;
+            if (payload.email) mockEmail = payload.email;
+          }
+        } catch (e) {}
+      }
+
+      if (mockEmail === 'ourproject@gmail.com') {
+        mockUserId = mockUserId === '00000000-0000-0000-0000-000000000000' ? 'admin-id-999999' : mockUserId;
+      }
       
       // Local JSON File Database Mock Client
       const fs = await import('fs');
@@ -47,13 +66,28 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           fs.writeFileSync(DB_PATH, JSON.stringify({
             profiles: [
               {
-                user_id: mockUserId,
+                user_id: "00000000-0000-0000-0000-000000000000",
                 display_name: "Guest",
                 total_points: 0,
                 current_streak: 1,
                 longest_streak: 1,
                 last_active_date: new Date().toISOString().slice(0, 10),
-                avatar_url: null
+                avatar_url: null,
+                role: "user",
+                is_premium: false,
+                premium_until: null
+              },
+              {
+                user_id: "admin-id-999999",
+                display_name: "Admin",
+                total_points: 1000,
+                current_streak: 5,
+                longest_streak: 5,
+                last_active_date: new Date().toISOString().slice(0, 10),
+                avatar_url: null,
+                role: "admin",
+                is_premium: true,
+                premium_until: "2099-12-31T23:59:59.000Z"
               }
             ],
             study_sessions: [],
@@ -69,7 +103,44 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       const readDb = () => {
         initDb();
         try {
-          return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+          const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+          let changed = false;
+          if (db.profiles) {
+            db.profiles.forEach((p: any) => {
+              if (p.role === undefined) {
+                p.role = p.user_id === "admin-id-999999" ? "admin" : "user";
+                changed = true;
+              }
+              if (p.is_premium === undefined) {
+                p.is_premium = p.user_id === "admin-id-999999" ? true : false;
+                changed = true;
+              }
+              if (p.premium_until === undefined) {
+                p.premium_until = p.user_id === "admin-id-999999" ? "2099-12-31T23:59:59.000Z" : null;
+                changed = true;
+              }
+            });
+            const hasAdmin = db.profiles.some((p: any) => p.user_id === "admin-id-999999");
+            if (!hasAdmin) {
+              db.profiles.push({
+                user_id: "admin-id-999999",
+                display_name: "Admin",
+                total_points: 1000,
+                current_streak: 5,
+                longest_streak: 5,
+                last_active_date: new Date().toISOString().slice(0, 10),
+                avatar_url: null,
+                role: "admin",
+                is_premium: true,
+                premium_until: "2099-12-31T23:59:59.000Z"
+              });
+              changed = true;
+            }
+          }
+          if (changed) {
+            fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+          }
+          return db;
         } catch (e) {
           return {};
         }
@@ -103,6 +174,18 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           this.data = this.data.filter(row => row[column] === value);
           return this;
         }
+        lte(column: string, value: any) {
+          this.data = this.data.filter(row => row[column] !== null && row[column] !== undefined && row[column] <= value);
+          return this;
+        }
+        gte(column: string, value: any) {
+          this.data = this.data.filter(row => row[column] !== null && row[column] !== undefined && row[column] >= value);
+          return this;
+        }
+        in(column: string, values: any[]) {
+          this.data = this.data.filter(row => values.includes(row[column]));
+          return this;
+        }
         order(column: string, { ascending = false } = {}) {
           this.data.sort((a, b) => {
             const valA = a[column];
@@ -126,7 +209,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           return new MockQueryPromise(result);
         }
         then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
-          return Promise.resolve({ data: this.data, error: null }).then(onfulfilled, onrejected);
+          return Promise.resolve({ data: this.data, count: this.data.length, error: null }).then(onfulfilled, onrejected);
         }
       }
 
