@@ -459,7 +459,7 @@ export const generateProjectZip = createServerFn({ method: "POST" })
       return { success: true, base64 };
     } catch (err) {
       console.error("Error zipping project:", err);
-      throw new Error("Failed to generate zip file on the server.");
+      throw new Error(`Failed to generate zip file: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 
