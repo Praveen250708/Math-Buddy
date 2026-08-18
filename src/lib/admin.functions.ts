@@ -70,9 +70,21 @@ export const getAdminStats = createServerFn({ method: "POST" })
 
       if (err2) throw err2;
 
+      // Query sessions and bookmarks count
+      const { count: dbSessionsCount } = await supabaseAdmin
+        .from("study_sessions")
+        .select("id", { count: "exact", head: true });
+
+      const { count: dbBookmarksCount } = await supabaseAdmin
+        .from("bookmarks")
+        .select("id", { count: "exact", head: true });
+
       const totalUsers = allProfiles?.length ?? 0;
       const premiumCount = allProfiles?.filter((p: any) => checkIsPremium(p)).length ?? 0;
       const freeCount = totalUsers - premiumCount;
+      const totalSessions = dbSessionsCount ?? 0;
+      const totalBookmarks = dbBookmarksCount ?? 0;
+      const totalQuizzes = allQuizAttempts?.length ?? 0;
 
       const topicCounts: Record<string, number> = {};
       const dailyCounts: Record<string, number> = {};
@@ -99,6 +111,9 @@ export const getAdminStats = createServerFn({ method: "POST" })
         freeCount,
         mostSolvedTopics,
         dailyUsage,
+        totalSessions,
+        totalBookmarks,
+        totalQuizzes,
         users: allProfiles ?? [],
       };
     } else {
@@ -114,16 +129,25 @@ export const getAdminStats = createServerFn({ method: "POST" })
           freeCount: 1,
           mostSolvedTopics: [],
           dailyUsage: [],
+          totalSessions: 0,
+          totalBookmarks: 0,
+          totalQuizzes: 0,
+          users: []
         };
       }
 
       const db = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
       const profiles = db.profiles || [];
       const quizAttempts = db.quiz_attempts || [];
+      const studySessions = db.study_sessions || [];
+      const bookmarks = db.bookmarks || [];
 
       const totalUsers = profiles.length;
       const premiumCount = profiles.filter((p: any) => checkIsPremium(p)).length;
       const freeCount = totalUsers - premiumCount;
+      const totalSessions = studySessions.length;
+      const totalBookmarks = bookmarks.length;
+      const totalQuizzes = quizAttempts.length;
 
       const topicCounts: Record<string, number> = {};
       const dailyCounts: Record<string, number> = {};
@@ -150,6 +174,9 @@ export const getAdminStats = createServerFn({ method: "POST" })
         freeCount,
         mostSolvedTopics,
         dailyUsage,
+        totalSessions,
+        totalBookmarks,
+        totalQuizzes,
         users: profiles,
       };
     }
@@ -264,7 +291,14 @@ export const getSystemSettings = createServerFn({ method: "GET" })
       maintenanceMode: false,
       xpMultiplier: 1,
       premiumMonthlyPrice: 1,
-      premiumAnnualPrice: 1000
+      premiumAnnualPrice: 1000,
+      snapSolveEnabled: true,
+      graphSolverEnabled: true,
+      paperSolverEnabled: true,
+      announcementEnabled: false,
+      announcementText: "",
+      announcementBadge: "NEW",
+      announcementLink: ""
     };
 
     try {
@@ -288,6 +322,13 @@ export const updateSystemSettings = createServerFn({ method: "POST" })
         xpMultiplier: number;
         premiumMonthlyPrice?: number;
         premiumAnnualPrice?: number;
+        snapSolveEnabled?: boolean;
+        graphSolverEnabled?: boolean;
+        paperSolverEnabled?: boolean;
+        announcementEnabled?: boolean;
+        announcementText?: string;
+        announcementBadge?: string;
+        announcementLink?: string;
       } 
     };
   })

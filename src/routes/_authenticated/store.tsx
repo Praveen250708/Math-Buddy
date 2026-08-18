@@ -570,7 +570,12 @@ function Store() {
     [activeTheme],
   );
 
-  const isOwned = (id: string) => purchases.includes(id);
+  const isOwned = (id: string) => {
+    if (id.startsWith("feature-") && id !== "feature-voice-tutor") {
+      return true;
+    }
+    return purchases.includes(id);
+  };
   const isEquipped = (item: StoreItem) => item.themeClass === activeTheme && !!activeTheme;
   const canAfford = (cost: number) => points >= cost;
 

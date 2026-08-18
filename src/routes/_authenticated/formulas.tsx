@@ -25,8 +25,8 @@ function FormulasPage() {
   const profileFn = useServerFn(getMyProfile);
   const spendFn = useServerFn(spendPoints);
 
-  const [unlocked, setUnlocked] = useState(false);
-  const [checkingUnlock, setCheckingUnlock] = useState(true);
+  const [unlocked, setUnlocked] = useState(true);
+  const [checkingUnlock, setCheckingUnlock] = useState(false);
   const [points, setPoints] = useState(0);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -40,24 +40,14 @@ function FormulasPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const purchases = JSON.parse(localStorage.getItem("mathbuddy_store_purchases") || "[]");
-      const isPurchased = purchases.includes("feature-formula-notebook");
-
       profileFn({}).then((res) => {
         if (res.profile) {
           setPoints(res.profile.total_points ?? 0);
-          const isPremiumOrAdmin = checkIsPremium(res.profile);
-          if (isPremiumOrAdmin || isPurchased) {
-            setUnlocked(true);
-          } else {
-            setUnlocked(false);
-          }
-        } else {
-          setUnlocked(isPurchased);
         }
+        setUnlocked(true);
         setCheckingUnlock(false);
       }).catch(() => {
-        setUnlocked(isPurchased);
+        setUnlocked(true);
         setCheckingUnlock(false);
       });
     }

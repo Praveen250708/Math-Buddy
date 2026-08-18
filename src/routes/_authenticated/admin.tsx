@@ -3,7 +3,8 @@ import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { 
   Users, ShieldCheck, TrendingUp, BarChart3, Sparkles, Loader2, 
-  Activity, Check, X, Search, GraduationCap, AlertTriangle, Monitor, Radio, Coins, Settings
+  Activity, Check, X, Search, GraduationCap, AlertTriangle, Monitor, Radio, Coins, Settings,
+  Timer, Bookmark, Target, Bot, Camera, FileText, Bell
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [settingsLoading, setSettingsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"features" | "announcements">("features");
   
   const [settings, setSettings] = useState({
     voiceTutorEnabled: true,
@@ -51,7 +53,14 @@ function AdminDashboard() {
     maintenanceMode: false,
     xpMultiplier: 1,
     premiumMonthlyPrice: 1,
-    premiumAnnualPrice: 1000
+    premiumAnnualPrice: 1000,
+    snapSolveEnabled: true,
+    graphSolverEnabled: true,
+    paperSolverEnabled: true,
+    announcementEnabled: false,
+    announcementText: "",
+    announcementBadge: "NEW",
+    announcementLink: ""
   });
 
   const [quickActivateInput, setQuickActivateInput] = useState("");
@@ -71,6 +80,9 @@ function AdminDashboard() {
     totalUsers: number;
     premiumCount: number;
     freeCount: number;
+    totalSessions: number;
+    totalBookmarks: number;
+    totalQuizzes: number;
     mostSolvedTopics: Array<{ topic: string; count: number }>;
     dailyUsage: Array<{ date: string; count: number }>;
     users: Array<{
@@ -280,10 +292,11 @@ function AdminDashboard() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid gap-5 sm:grid-cols-1 max-w-sm">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Users */}
         <Card className="rounded-2xl border-border/80 bg-gradient-card shadow-card relative overflow-hidden group hover:border-primary/40 transition-all duration-300">
           <div className="absolute top-0 right-0 p-4 opacity-10 text-primary-glow group-hover:scale-110 transition-transform duration-300">
-            <Users className="h-20 w-20" />
+            <Users className="h-16 w-16" />
           </div>
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-semibold uppercase text-muted-foreground/80 tracking-wider">Total Users Registered</CardDescription>
@@ -291,6 +304,48 @@ function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">Active study profiles in database</p>
+          </CardContent>
+        </Card>
+
+        {/* Study Sessions */}
+        <Card className="rounded-2xl border-border/80 bg-gradient-card shadow-card relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-cyan-500 group-hover:scale-110 transition-transform duration-300">
+            <Timer className="h-16 w-16" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-semibold uppercase text-muted-foreground/80 tracking-wider">Focus Sessions Logged</CardDescription>
+            <CardTitle className="font-display text-4xl font-black text-cyan-400">{stats.totalSessions}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Study timer sessions completed</p>
+          </CardContent>
+        </Card>
+
+        {/* Saved Bookmarks */}
+        <Card className="rounded-2xl border-border/80 bg-gradient-card shadow-card relative overflow-hidden group hover:border-amber-500/30 transition-all duration-300">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500 group-hover:scale-110 transition-transform duration-300">
+            <Bookmark className="h-16 w-16" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-semibold uppercase text-muted-foreground/80 tracking-wider">Saved Bookmarks</CardDescription>
+            <CardTitle className="font-display text-4xl font-black text-amber-400">{stats.totalBookmarks}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Formulas and solutions bookmarked</p>
+          </CardContent>
+        </Card>
+
+        {/* Quizzes Solved */}
+        <Card className="rounded-2xl border-border/80 bg-gradient-card shadow-card relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-emerald-500 group-hover:scale-110 transition-transform duration-300">
+            <Target className="h-16 w-16" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardDescription className="text-xs font-semibold uppercase text-muted-foreground/80 tracking-wider">Practice Quizzes Solved</CardDescription>
+            <CardTitle className="font-display text-4xl font-black text-emerald-400">{stats.totalQuizzes}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">AI solver queries generated</p>
           </CardContent>
         </Card>
       </div>
@@ -377,86 +432,243 @@ function AdminDashboard() {
               <Settings className="h-5 w-5 text-primary" />
               <div>
                 <h3 className="text-base font-bold font-display">System Settings & Controls</h3>
-                <p className="text-xs text-muted-foreground">Modify global settings, feature access policies, and reward multipliers</p>
+                <p className="text-xs text-muted-foreground">Modify global settings, feature access flags, and announcement banners</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {/* Voice Tutor Enabled */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-foreground">AI Voice Tutor Service</span>
-                  <p className="text-[10px] text-muted-foreground">Enable voice queries & microphone responses</p>
-                </div>
-                <Button 
-                  size="sm"
-                  variant={settings.voiceTutorEnabled ? "default" : "secondary"}
-                  onClick={() => handleToggleSetting("voiceTutorEnabled")}
-                  disabled={settingsLoading}
-                  className={`h-8 font-bold text-xs ${settings.voiceTutorEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
-                >
-                  {settings.voiceTutorEnabled ? "ON / Active" : "OFF / Disabled"}
-                </Button>
-              </div>
-
-              {/* Enforce Daily Solve Cap */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-foreground">Daily Solve Limit Policy</span>
-                  <p className="text-[10px] text-muted-foreground">Enforce 30-solve limit on free student tier</p>
-                </div>
-                <Button 
-                  size="sm"
-                  variant={settings.solveLimitEnforced ? "default" : "secondary"}
-                  onClick={() => handleToggleSetting("solveLimitEnforced")}
-                  disabled={settingsLoading}
-                  className={`h-8 font-bold text-xs ${settings.solveLimitEnforced ? 'bg-primary' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-950/60'}`}
-                >
-                  {settings.solveLimitEnforced ? "Enforced" : "Bypassed (Unlimited)"}
-                </Button>
-              </div>
-
-              {/* Maintenance Mode */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-foreground">Maintenance Mode</span>
-                  <p className="text-[10px] text-muted-foreground">Restrict app interface to display Offline warning</p>
-                </div>
-                <Button 
-                  size="sm"
-                  variant={settings.maintenanceMode ? "default" : "secondary"}
-                  onClick={() => handleToggleSetting("maintenanceMode")}
-                  disabled={settingsLoading}
-                  className={`h-8 font-bold text-xs ${settings.maintenanceMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-muted border border-border hover:bg-muted/80'}`}
-                >
-                  {settings.maintenanceMode ? "Active / Offline" : "Inactive / Normal"}
-                </Button>
-              </div>
-
-              {/* XP Multiplier */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-foreground">XP & Focus Point Multiplier</span>
-                  <p className="text-[10px] text-muted-foreground">Global multiplier for completing quiz challenges</p>
-                </div>
-                <div className="flex gap-1.5">
-                  {[1, 2, 5].map((val) => (
-                    <button
-                      key={val}
-                      onClick={() => handleMultiplierChange(val)}
-                      disabled={settingsLoading}
-                      className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all border ${
-                        settings.xpMultiplier === val
-                          ? "bg-gradient-primary text-foreground border-primary shadow-glow"
-                          : "bg-background border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {val}x
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Tabs Selector */}
+            <div className="flex border-b border-border/50 mb-5">
+              <button
+                onClick={() => setActiveTab("features")}
+                className={`flex-1 pb-2 text-center text-xs font-bold transition-all border-b-2 ${
+                  activeTab === "features" 
+                    ? "border-primary text-primary font-bold"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                ⚙️ Feature Flags
+              </button>
+              <button
+                onClick={() => setActiveTab("announcements")}
+                className={`flex-1 pb-2 text-center text-xs font-bold transition-all border-b-2 ${
+                  activeTab === "announcements" 
+                    ? "border-primary text-primary font-bold"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                📢 Announcements
+              </button>
             </div>
+
+            {activeTab === "features" && (
+              <div className="space-y-4">
+                {/* Voice Tutor Enabled */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">AI Voice Tutor Service</span>
+                    <p className="text-[10px] text-muted-foreground">Enable microphone spoken query responses</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.voiceTutorEnabled ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("voiceTutorEnabled")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.voiceTutorEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
+                  >
+                    {settings.voiceTutorEnabled ? "ON / Active" : "OFF / Disabled"}
+                  </Button>
+                </div>
+
+                {/* Snap Solve Enabled */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Snap to Solve Service</span>
+                    <p className="text-[10px] text-muted-foreground">Enable photo OCR and handwritten problem solvers</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.snapSolveEnabled ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("snapSolveEnabled")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.snapSolveEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
+                  >
+                    {settings.snapSolveEnabled ? "ON / Active" : "OFF / Disabled"}
+                  </Button>
+                </div>
+
+                {/* Graph Solver Enabled */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Graph & Diagram Solver</span>
+                    <p className="text-[10px] text-muted-foreground">Enable visual geometry chart analysis tools</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.graphSolverEnabled ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("graphSolverEnabled")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.graphSolverEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
+                  >
+                    {settings.graphSolverEnabled ? "ON / Active" : "OFF / Disabled"}
+                  </Button>
+                </div>
+
+                {/* Paper Solver Enabled */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Question Paper Solver</span>
+                    <p className="text-[10px] text-muted-foreground">Enable multi-page PDF exams solver service</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.paperSolverEnabled ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("paperSolverEnabled")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.paperSolverEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
+                  >
+                    {settings.paperSolverEnabled ? "ON / Active" : "OFF / Disabled"}
+                  </Button>
+                </div>
+
+                {/* Enforce Daily Solve Cap */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Daily Solve Limit Policy</span>
+                    <p className="text-[10px] text-muted-foreground">Enforce 30-solve limit on free student tier</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.solveLimitEnforced ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("solveLimitEnforced")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.solveLimitEnforced ? 'bg-primary' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-950/60'}`}
+                  >
+                    {settings.solveLimitEnforced ? "Enforced" : "Bypassed (Unlimited)"}
+                  </Button>
+                </div>
+
+                {/* Maintenance Mode */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Maintenance Mode</span>
+                    <p className="text-[10px] text-muted-foreground">Restrict app interface to display Offline warning</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.maintenanceMode ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("maintenanceMode")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.maintenanceMode ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-muted border border-border hover:bg-muted/80'}`}
+                  >
+                    {settings.maintenanceMode ? "Active / Offline" : "Inactive / Normal"}
+                  </Button>
+                </div>
+
+                {/* XP Multiplier */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">XP & Focus Point Multiplier</span>
+                    <p className="text-[10px] text-muted-foreground">Global multiplier for completing quiz challenges</p>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 5].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => handleMultiplierChange(val)}
+                        disabled={settingsLoading}
+                        className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all border ${
+                          settings.xpMultiplier === val
+                            ? "bg-gradient-primary text-foreground border-primary shadow-glow"
+                            : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        {val}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "announcements" && (
+              <div className="space-y-4">
+                {/* Toggle Announcement Banner */}
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/30">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-foreground">Announcement Banner Status</span>
+                    <p className="text-[10px] text-muted-foreground">Enable system announcement bar on student dashboard</p>
+                  </div>
+                  <Button 
+                    size="sm"
+                    variant={settings.announcementEnabled ? "default" : "secondary"}
+                    onClick={() => handleToggleSetting("announcementEnabled")}
+                    disabled={settingsLoading}
+                    className={`h-8 font-bold text-xs ${settings.announcementEnabled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-950/40 text-red-400 border border-red-500/20 hover:bg-red-950/60'}`}
+                  >
+                    {settings.announcementEnabled ? "Displaying" : "Hidden"}
+                  </Button>
+                </div>
+
+                {/* Announcement Content Form */}
+                <div className="p-3 rounded-xl border border-border/50 bg-background/30 space-y-3">
+                  <span className="text-xs font-bold text-foreground block">Customize Announcement Details</span>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-[9px] font-semibold text-muted-foreground uppercase">Alert Badge Category</label>
+                      <select
+                        value={settings.announcementBadge ?? "NEW"}
+                        onChange={(e) => setSettings(prev => ({ ...prev, announcementBadge: e.target.value }))}
+                        className="w-full mt-1 h-8 rounded border border-border/60 bg-slate-900 px-3 text-xs focus:ring-0 focus:outline-none"
+                      >
+                        <option value="NEW">🎉 NEW FEATURE</option>
+                        <option value="UPDATE">⚡ MAINTENANCE / UPDATE</option>
+                        <option value="ALERT">⚠️ SYSTEM ALERT</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-semibold text-muted-foreground uppercase">Banner Announcement Text</label>
+                      <Input
+                        placeholder="Enter the alert announcement message..."
+                        value={settings.announcementText ?? ""}
+                        onChange={(e) => setSettings(prev => ({ ...prev, announcementText: e.target.value }))}
+                        className="h-8 text-xs border-border/60 bg-slate-900 mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-semibold text-muted-foreground uppercase">Details Route Link (Optional)</label>
+                      <Input
+                        placeholder="e.g. /formulas, /store, /quiz (or leave empty)"
+                        value={settings.announcementLink ?? ""}
+                        onChange={(e) => setSettings(prev => ({ ...prev, announcementLink: e.target.value }))}
+                        className="h-8 text-xs border-border/60 bg-slate-900 mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    size="sm"
+                    onClick={async () => {
+                      setSettingsLoading(true);
+                      try {
+                        await updateSettingsFn({ data: { settings } });
+                        toast.success("System announcement banner saved and published!");
+                      } catch (e) {
+                        toast.error("Failed to update announcement settings");
+                      } finally {
+                        setSettingsLoading(false);
+                      }
+                    }}
+                    disabled={settingsLoading}
+                    className="w-full bg-gradient-primary h-8 font-bold text-xs"
+                  >
+                    Save & Deploy Announcement
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 

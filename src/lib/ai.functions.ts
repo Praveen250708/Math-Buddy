@@ -441,13 +441,22 @@ export const getSpeechAudio = createServerFn({ method: "POST" })
 
 export const generateProjectZip = createServerFn({ method: "POST" })
   .handler(async () => {
-    const cmd = `powershell -Command "Compress-Archive -Path src, public/_redirects, package.json, tsconfig.json, vite.config.ts, components.json, eslint.config.js, wrangler.jsonc, bunfig.toml -DestinationPath public/project.zip -Force"`;
+    const tempZipPath = "project-temp.zip";
+    const cmd = `powershell -Command "Compress-Archive -Path src, public/_redirects, package.json, tsconfig.json, vite.config.ts, components.json, eslint.config.js, wrangler.jsonc, bunfig.toml, .env, install.bat, run.bat, readme.txt -DestinationPath ${tempZipPath} -Force"`;
     try {
       const { exec } = await import("child_process");
       const { promisify } = await import("util");
+      const fs = await import("fs/promises");
       const execAsync = promisify(exec);
       await execAsync(cmd, { cwd: process.cwd() });
-      return { success: true };
+      
+      const buffer = await fs.readFile(tempZipPath);
+      const base64 = buffer.toString("base64");
+      
+      // Clean up the temp zip file on the server
+      await fs.unlink(tempZipPath);
+      
+      return { success: true, base64 };
     } catch (err) {
       console.error("Error zipping project:", err);
       throw new Error("Failed to generate zip file on the server.");
@@ -706,6 +715,19 @@ Ensure the returned format is a valid JSON object matching the schema:
         spokenText: "I'm sorry, I encountered an issue preparing the spoken response. Please read the mathematical explanation on screen.",
         displayText: content,
       };
+    }
+  });
+
+export const checkIsDeveloperWorkspace = createServerFn({ method: "GET" })
+  .handler(async () => {
+    try {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const markerPath = path.join(process.cwd(), "developer.marker");
+      await fs.access(markerPath);
+      return { isDeveloper: true };
+    } catch {
+      return { isDeveloper: false };
     }
   });
 

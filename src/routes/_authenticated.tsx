@@ -22,7 +22,8 @@ import { Footer } from "@/components/footer";
 import { useServerFn } from "@tanstack/react-start";
 import { pingStreak, getMyProfile, getStreakFreezes } from "@/lib/gamification.functions";
 import { getClientUser } from "@/lib/auth-helpers";
-import { generateProjectZip } from "@/lib/ai.functions";
+import { generateProjectZip, checkIsDeveloperWorkspace } from "@/lib/ai.functions";
+import { getSystemSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
@@ -40,26 +41,55 @@ function AuthLayout() {
   const getProfileFn = useServerFn(getMyProfile);
   const getFreezeFn = useServerFn(getStreakFreezes);
   const generateZipFn = useServerFn(generateProjectZip);
+  const getSettingsFn = useServerFn(getSystemSettings);
+  const checkIsDevFn = useServerFn(checkIsDeveloperWorkspace);
+
   const [points, setPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState<number>(0);
   const [streakFreezes, setStreakFreezes] = useState<number>(2);
   const [downloading, setDownloading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
+  const [isLocal, setIsLocal] = useState(false);
+  const [isDeveloperWorkspace, setIsDeveloperWorkspace] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsLocal(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    }
+    checkIsDevFn({}).then((res) => {
+      if (res && res.isDeveloper) {
+        setIsDeveloperWorkspace(true);
+      }
+    }).catch(() => {});
+  }, [checkIsDevFn]);
 
   const onDownloadZip = async () => {
     setDownloading(true);
     toast.info("Generating project ZIP file, please wait...");
     try {
-      await generateZipFn({});
-      
-      const link = document.createElement("a");
-      link.href = "/project.zip";
-      link.download = "math-buddy.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Project ZIP downloaded successfully!");
+      const res = await generateZipFn({});
+      if (res && res.base64) {
+        const binaryString = window.atob(res.base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: "application/zip" });
+        
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "math-buddy-project.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
+        toast.success("Project ZIP downloaded successfully!");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to download ZIP file");
     } finally {
@@ -97,11 +127,16 @@ function AuthLayout() {
         const fRes = await getFreezeFn({});
         if (active) setStreakFreezes(fRes.streak_freezes);
       } catch {}
+
+      try {
+        const sRes = await getSettingsFn({});
+        if (active && sRes.settings) setSettings(sRes.settings);
+      } catch {}
     })();
     return () => {
       active = false;
     };
-  }, [ping, getProfileFn, getFreezeFn]);
+  }, [ping, getProfileFn, getFreezeFn, getSettingsFn]);
 
   const onLogout = async () => {
     localStorage.removeItem("guest-login");
@@ -109,6 +144,37 @@ function AuthLayout() {
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
+
+  if (settings?.maintenanceMode && profile && profile.role !== "admin") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-foreground p-6 relative overflow-hidden font-sans">
+        <div className="absolute top-1/4 left-1/4 h-80 w-80 rounded-full bg-primary/10 blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-accent/10 blur-[100px]" />
+        <div className="max-w-md w-full rounded-3xl border border-border/80 bg-slate-900/60 backdrop-blur-xl p-8 text-center space-y-6 shadow-card relative z-10">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+            <span className="text-3xl animate-bounce">🛠️</span>
+          </div>
+          <div className="space-y-2">
+            <h1 className="font-display text-2xl font-black tracking-tight">Planned Maintenance</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We are currently upgrading the Math Buddy engine with new features and optimizations. Access will resume shortly!
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl border border-border/50 bg-background/30 text-xs text-muted-foreground flex flex-col items-center gap-1">
+            <span className="font-bold text-foreground">Estimated Downtime</span>
+            <span>Approx. 30 - 45 mins</span>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={onLogout}
+            className="w-full border-border/60 hover:bg-red-500/10 hover:text-red-400 font-bold"
+          >
+            Sign Out
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -136,6 +202,23 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
+
+              {(!isLocal || isDeveloperWorkspace) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onDownloadZip}
+                  disabled={downloading}
+                  className="gap-1.5 border-primary/30 hover:bg-primary/10 text-primary font-medium"
+                >
+                  {downloading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  <span>Install App</span>
+                </Button>
+              )}
 
                <ThemeToggle />
                <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">

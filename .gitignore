@@ -31,3 +31,5 @@ dist-ssr
 *.sln
 *.sw?
 .env
+developer.marker
+public/project.zip
