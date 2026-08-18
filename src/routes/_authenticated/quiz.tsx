@@ -84,7 +84,7 @@ function QuizPage() {
     // Check if it's a custom topic and locked
     const formattedTopic = topic.trim().toLowerCase();
     const isFree = FREE_PRESET_TOPICS.includes(formattedTopic);
-    const hasUnlock = purchases.includes("feature-custom-quizzes");
+    const hasUnlock = true;
     if (!isFree && !hasUnlock) {
       toast.error("Custom Quiz Builder is locked! Unlock it from the Focus Store to query custom topics.");
       return;
@@ -226,7 +226,7 @@ function QuizPage() {
             </div>
 
             {/* Gating lock alert for custom topic */}
-            {topic.trim() && !FREE_PRESET_TOPICS.includes(topic.trim().toLowerCase()) && !purchases.includes("feature-custom-quizzes") && (
+            {topic.trim() && !FREE_PRESET_TOPICS.includes(topic.trim().toLowerCase()) && !true && (
               <div className="mt-4 p-4 rounded-xl border border-warning/30 bg-warning/5 space-y-3">
                 <div className="flex items-start gap-3">
                   <span className="text-xl">🔒</span>
