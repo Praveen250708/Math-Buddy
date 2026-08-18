@@ -443,8 +443,8 @@ export const generateProjectZip = createServerFn({ method: "POST" })
   .handler(async () => {
     const tempZipPath = "project-temp.zip";
     const cmd = process.platform === "win32"
-      ? `powershell -Command "Compress-Archive -Path src, public/_redirects, package.json, tsconfig.json, vite.config.ts, components.json, eslint.config.js, wrangler.jsonc, bunfig.toml, .env, install.bat, run.bat, readme.txt -DestinationPath ${tempZipPath} -Force"`
-      : `zip -r ${tempZipPath} src public/_redirects package.json tsconfig.json vite.config.ts components.json eslint.config.js wrangler.jsonc bunfig.toml .env install.bat run.bat readme.txt`;
+      ? `powershell -Command "Compress-Archive -Path 'Math Buddy.exe', readme.txt -DestinationPath ${tempZipPath} -Force"`
+      : `zip -r ${tempZipPath} "Math Buddy.exe" readme.txt`;
     try {
       const { exec } = await import("child_process");
       const { promisify } = await import("util");
