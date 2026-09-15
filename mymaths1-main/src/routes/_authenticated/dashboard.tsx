@@ -26,10 +26,11 @@ import { getDailyChallenge } from "@/lib/ai.functions";
 import { getAchievements, getTopicProgress, getMyProfile } from "@/lib/gamification.functions";
 import { getDueReviewCount } from "@/lib/review.functions";
 import { listExams } from "@/lib/exams.functions";
-import { getClientUser } from "@/lib/auth-helpers";
+import { getClientUser, getUserDisplayName, setGuestDisplayName } from "@/lib/auth-helpers";
 import { prefilledTopicKey } from "@/lib/topic-prefill";
 import { BadgeGrid } from "@/components/badge-share-card";
 import { StreakRing } from "@/components/streak-ring";
+import { Edit3, Check, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -60,6 +61,9 @@ function Dashboard() {
   const reviewCountFn = useServerFn(getDueReviewCount);
 
   const [name, setName] = useState("");
+  const [isGuest, setIsGuest] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState("");
   const [userId, setUserId] = useState("");
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -86,12 +90,25 @@ function Dashboard() {
     localStorage.setItem(DAILY_GOAL_KEY, String(n));
   };
 
+  const handleSaveGuestName = () => {
+    const trimmed = tempName.trim();
+    if (trimmed) {
+      setGuestDisplayName(trimmed);
+      setName(trimmed);
+    }
+    setIsEditingName(false);
+  };
+
   useEffect(() => {
     (async () => {
       const userRes = await getClientUser().catch(() => ({ data: { user: null } }));
-      const uid = userRes.data?.user?.id ?? "guest-id-123456";
+      const user = userRes.data?.user;
+      const uid = user?.id ?? "guest-id-123456";
       setUserId(uid);
       setTodaySolved(getTodaySolvedCount(uid));
+
+      const isGuestMode = typeof window !== "undefined" && localStorage.getItem("guest-login") === "true";
+      setIsGuest(isGuestMode);
 
       const [profRes, ach, prog, ex, rc] = await Promise.all([
         profileFn({}).catch(() => ({ profile: null })),
@@ -101,14 +118,17 @@ function Dashboard() {
         reviewCountFn({}).catch(() => ({ count: 0 })),
       ]);
       const profile = profRes.profile;
+      
+      const resolvedName = getUserDisplayName(user, profile);
+      setName(resolvedName);
+      setTempName(resolvedName);
+
       if (profile) {
-        setName(profile.display_name ?? "");
-        setPoints(profile.total_points);
+        setPoints(profile.total_points ?? 0);
         setStreak(profile.current_streak ?? 0);
         setLongest(profile.longest_streak ?? 0);
-      } else if (typeof window !== "undefined" && localStorage.getItem("guest-login") === "true") {
-        setName("guest");
       }
+
       setAchievements((ach.achievements ?? []) as { code: string; earned_at: string }[]);
       setProgress(prog.progress ?? []);
       const upcoming = (ex.exams ?? []).find((e: any) => new Date(e.exam_date) >= new Date());
@@ -153,9 +173,55 @@ function Dashboard() {
         {/* Left: greeting + CTA button */}
         <div className="flex flex-col gap-3 min-w-0">
           <div>
-            <h1 className="font-display text-3xl font-bold md:text-4xl">
-              {name.toLowerCase() === "guest" ? "Welcome, guest" : `Welcome back${name ? `, ${name}` : ""}`} 👋
-            </h1>
+            <div className="flex items-center flex-wrap gap-2">
+              <h1 className="font-display text-3xl font-bold md:text-4xl">
+                Welcome back{name ? <>, <span className="text-primary">{name}</span></> : ""} 👋
+              </h1>
+              {isGuest && (
+                isEditingName ? (
+                  <div className="flex items-center gap-1.5 mt-1 sm:mt-0">
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveGuestName()}
+                      placeholder="Your name"
+                      className="h-8 rounded-lg border border-primary/50 bg-background px-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveGuestName}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                      title="Save name"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTempName(name);
+                        setIsEditingName(false);
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setTempName(name === "Guest" ? "" : name);
+                      setIsEditingName(true);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors border border-border/80 hover:border-primary/50 rounded-full px-2.5 py-0.5 mt-1 sm:mt-0"
+                    title="Customize guest name"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    <span>Change name</span>
+                  </button>
+                )
+              )}
+            </div>
             <p className="mt-1 text-muted-foreground">Keep the streak going. What are we mastering today?</p>
           </div>
           <Link to="/study">

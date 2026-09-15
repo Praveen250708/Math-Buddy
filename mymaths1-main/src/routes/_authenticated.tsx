@@ -20,7 +20,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { Footer } from "@/components/footer";
 import { useServerFn } from "@tanstack/react-start";
 import { pingStreak, getMyProfile, getStreakFreezes } from "@/lib/gamification.functions";
-import { getClientUser } from "@/lib/auth-helpers";
+import { getClientUser, getUserDisplayName } from "@/lib/auth-helpers";
 import { generateProjectZip } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -43,6 +43,7 @@ function AuthLayout() {
   const [streak, setStreak] = useState<number>(0);
   const [streakFreezes, setStreakFreezes] = useState<number>(2);
   const [downloading, setDownloading] = useState(false);
+  const [userName, setUserName] = useState<string>("");
 
   const onDownloadZip = async () => {
     setDownloading(true);
@@ -68,6 +69,14 @@ function AuthLayout() {
   useEffect(() => {
     let active = true;
     (async () => {
+      let currentProfile: any = null;
+      let currentUser: any = null;
+
+      try {
+        const u = await getClientUser();
+        currentUser = u.data?.user;
+      } catch {}
+
       // Update streak on every authenticated session entry
       try {
         const s = await ping({});
@@ -85,10 +94,15 @@ function AuthLayout() {
       try {
         const res = await getProfileFn({});
         if (active && res.profile) {
+          currentProfile = res.profile;
           setPoints(res.profile.total_points);
           setStreak(res.profile.current_streak);
         }
       } catch {}
+
+      if (active) {
+        setUserName(getUserDisplayName(currentUser, currentProfile));
+      }
 
       try {
         const fRes = await getFreezeFn({});
@@ -142,10 +156,21 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
-               <ThemeToggle />
-               <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
-                 <LogOut className="h-4 w-4" />
-               </Button>
+              {userName && (
+                <div
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 py-1 text-xs font-medium"
+                  title={`Logged in as ${userName}`}
+                >
+                  <div className="h-5 w-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="max-w-[120px] truncate hidden sm:inline text-foreground">{userName}</span>
+                </div>
+              )}
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </header>
 
