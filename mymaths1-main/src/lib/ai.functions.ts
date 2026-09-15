@@ -72,21 +72,57 @@ const LEVEL = "college-level mathematics";
 
 export const getFormulas = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ topic: z.string().trim().min(1).max(200) }).parse(input),
+    z
+      .object({
+        topic: z.string().trim().min(1).max(200),
+        difficulty: z.enum(["all", "easy", "medium", "hard"]).optional().default("all"),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    const diff = data.difficulty || "all";
+    
+    let difficultyInstruction = "";
+    if (diff === "easy") {
+      difficultyInstruction = `Focus STRICTLY on FOUNDATION / EASY level formulas: core elementary definitions, standard rules, fundamental identities, and basic prerequisite properties.
+Mark every formula explicitly with the badge [🟢 Foundation / Easy]. Include prerequisites and intuitive meaning.`;
+    } else if (diff === "medium") {
+      difficultyInstruction = `Focus STRICTLY on INTERMEDIATE / MEDIUM level formulas: core college-level operational formulas, techniques (e.g. transformations, multi-step identities, applied standard formulas).
+Mark every formula explicitly with the badge [🟡 Intermediate]. Include key variable conditions and standard exam applications.`;
+    } else if (diff === "hard") {
+      difficultyInstruction = `Focus STRICTLY on ADVANCED / EXAM LEVEL (HARD) formulas: complex multivariable/higher-order theorems, specialized reduction formulas, boundary conditions, and olympiad/competitive exam identities.
+Mark every formula explicitly with the badge [🔴 Advanced / Exam Level]. Include rigorous conditions, caveats, and master-level exam tips.`;
+    } else {
+      difficultyInstruction = `Organize the formulas systematically into 3 CLEAR DIFFICULTY TIERS:
+### 🟢 Foundation / Easy Level
+(Core fundamental rules, standard definitions, and essential identities that every student must know first)
+
+### 🟡 Intermediate / Standard Level
+(Applied operational formulas, transformations, and standard semester exam equations)
+
+### 🔴 Advanced / Exam Mastery Level
+(Complex theorems, higher-order results, specialized reduction formulas, and tricky edge-case identities)
+
+For EACH formula, include its difficulty badge: [🟢 Foundation], [🟡 Intermediate], or [🔴 Advanced].`;
+    }
+
     const content = await callAI(
-      `You are an expert ${LEVEL} tutor. When given a topic, you MUST list every single important formula, identity, rule, and theorem associated with that topic. Do not omit any equations; be exhaustively thorough so that a student has a complete guide for their exams.
-Format strictly as Markdown with sections:
-## Topic
-A one-sentence overview.
+      `You are an expert ${LEVEL} tutor. When given a topic, you MUST provide an exhaustive, authoritative formula sheet for that topic categorized with CLEAR DIFFICULTY LEVELS.
+${difficultyInstruction}
+
+Format strictly as Markdown:
+## Topic Overview
+A concise, high-yield overview of "${data.topic}" and what this formula sheet covers.
+
 ## Formulas
-A numbered list. For each formula:
-- Bold name
-- The formula on its own line as a DISPLAY LaTeX equation wrapped in $$ ... $$ (use proper LaTeX: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\int, \\sum, \\lim, \\vec{}, \\cdot, etc.)
-- A one-line description of variables and when to use it (inline math wrapped in single $ ... $)
-Always use real LaTeX, never plain ASCII. Be comprehensive and thorough. No fluff, no greetings.`,
-      `Topic: ${data.topic}`,
+Follow the specified difficulty grouping or numbered structure. For EACH formula:
+- **Formula Name** \`[Difficulty Badge]\`
+- Display LaTeX equation on its own line wrapped in $$ ... $$ (strictly use valid LaTeX: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\int, \\sum, \\lim, \\vec{}, \\cdot, \\partial, etc.)
+- **Usage & Conditions:** A clear explanation of variables, constraints, and when/why to apply this formula (inline math in single $ ... $)
+- **Difficulty Rating:** State either 🟢 Foundation (Easy), 🟡 Intermediate (Medium), or 🔴 Advanced (Hard), along with recommended prerequisites.
+
+Always use real LaTeX, never plain ASCII. Be comprehensive, precise, and practical for college exam preparation. No fluff, no greetings.`,
+      `Topic: ${data.topic}${diff !== "all" ? `\nTarget Difficulty: ${diff}` : ""}`,
     );
     return { content };
   });

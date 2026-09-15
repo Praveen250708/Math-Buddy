@@ -49,57 +49,56 @@ export function BadgeShareCard({ code, label, icon, earnedAt, userName }: BadgeS
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Hidden renderable card */}
-      <div
-        ref={cardRef}
-        style={{
-          position: "absolute",
-          left: "-9999px",
-          top: 0,
-          width: "320px",
-          padding: "32px",
-          background: "linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)",
-          borderRadius: "20px",
-          border: "1px solid rgba(99, 102, 241, 0.3)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "16px",
-          fontFamily: "'Inter', sans-serif",
-          color: "#e2e8f0",
-          boxSizing: "border-box",
-        }}
-      >
-        {/* App name */}
-        <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Math Buddy
-        </div>
+      {/* Hidden wrapper container to hide the card from view without causing html2canvas coordinate offset errors */}
+      <div style={{ position: "absolute", left: 0, top: 0, width: 0, height: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <div
+          ref={cardRef}
+          style={{
+            width: "320px",
+            padding: "32px",
+            background: "linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)",
+            borderRadius: "20px",
+            border: "1px solid rgba(99, 102, 241, 0.3)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px",
+            fontFamily: "'Inter', sans-serif",
+            color: "#e2e8f0",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* App name */}
+          <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Math Buddy
+          </div>
 
-        {/* Badge icon */}
-        <div style={{
-          fontSize: "56px",
-          lineHeight: 1,
-          background: "rgba(99, 102, 241, 0.15)",
-          borderRadius: "16px",
-          padding: "20px",
-          border: "1px solid rgba(99, 102, 241, 0.3)",
-        }}>
-          {icon}
-        </div>
+          {/* Badge icon */}
+          <div style={{
+            fontSize: "56px",
+            lineHeight: 1,
+            background: "rgba(99, 102, 241, 0.15)",
+            borderRadius: "16px",
+            padding: "20px",
+            border: "1px solid rgba(99, 102, 241, 0.3)",
+          }}>
+            {icon}
+          </div>
 
-        {/* Badge name */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc" }}>{label}</div>
-          <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>Achievement Unlocked</div>
-        </div>
+          {/* Badge name */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc" }}>{label}</div>
+            <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>Achievement Unlocked</div>
+          </div>
 
-        {/* Divider */}
-        <div style={{ width: "60px", height: "1px", background: "rgba(99, 102, 241, 0.4)" }} />
+          {/* Divider */}
+          <div style={{ width: "60px", height: "1px", background: "rgba(99, 102, 241, 0.4)" }} />
 
-        {/* User + date */}
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#e2e8f0" }}>{userName || "Math Buddy Student"}</div>
-          {dateStr && <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>Earned on {dateStr}</div>}
+          {/* User + date */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#e2e8f0" }}>{userName || "Math Buddy Student"}</div>
+            {dateStr && <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>Earned on {dateStr}</div>}
+          </div>
         </div>
       </div>
 
