@@ -736,6 +736,7 @@ type ParsedStep = {
 
 type ParsedSolution = {
   preamble: string;  // ## Problem + ## Idea
+  formula?: string;  // ## Formula Used
   steps: ParsedStep[];
   conclusion: string; // ## Final Answer
 };
@@ -745,14 +746,18 @@ function parseSolution(content: string): ParsedSolution {
   const sections = content.split(/(?=^## )/m).filter(Boolean);
 
   let preamble = "";
+  let formula = "";
   const steps: ParsedStep[] = [];
   let conclusion = "";
   let inSteps = false;
-  let currentStep = "";
-  let currentHeading = "";
 
   for (const section of sections) {
     const header = section.match(/^## (.+)/m)?.[1]?.trim().toLowerCase() ?? "";
+
+    if (header.includes("formula")) {
+      formula += section;
+      continue;
+    }
 
     if (header === "steps") {
       inSteps = true;
@@ -796,7 +801,7 @@ function parseSolution(content: string): ParsedSolution {
     }
   }
 
-  return { preamble: preamble.trim(), steps, conclusion: conclusion.trim() };
+  return { preamble: preamble.trim(), formula: formula.trim(), steps, conclusion: conclusion.trim() };
 }
 
 // ─── ConfusedChat ────────────────────────────────────────────────────────────
@@ -1035,7 +1040,7 @@ function StepByStepResult({ loading, content, problem, language, clarifyFn }: St
     return <ResultPanel loading={loading} content={content} emptyText="Drop a problem above to get a step-by-step solution." />;
   }
 
-  const { preamble, steps, conclusion } = parseSolution(content);
+  const { preamble, formula, steps, conclusion } = parseSolution(content);
 
   // If we couldn't parse any steps, fall back to plain renderer
   if (steps.length === 0) {
@@ -1048,6 +1053,18 @@ function StepByStepResult({ loading, content, problem, language, clarifyFn }: St
       {preamble && (
         <div className="rounded-2xl border border-border bg-gradient-card p-6 shadow-card">
           <MarkdownView text={preamble} />
+        </div>
+      )}
+
+      {/* Governing Formula */}
+      {formula && (
+        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-6 shadow-card space-y-2">
+          <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-base">📐</span> Governing Formula
+          </div>
+          <div className="text-sm">
+            <MarkdownView text={formula.replace(/^##\s*Formula\s*Used/i, "").trim()} />
+          </div>
         </div>
       )}
 

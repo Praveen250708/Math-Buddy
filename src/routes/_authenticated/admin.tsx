@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { getAdminStats, adminUpdateUser, getSystemSettings, updateSystemSettings } from "@/lib/admin.functions";
 import { getMyProfile } from "@/lib/gamification.functions";
 import { PageHeader } from "./formulas";
+import { AdminQuestionManager } from "@/features/practice-levels/components/AdminQuestionManager";
 
 // Recharts components
 import { 
@@ -734,6 +735,9 @@ function AdminDashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Practice Levels Question Management */}
+      <AdminQuestionManager />
 
       {/* User Directory */}
       <Card className="rounded-2xl border-border bg-card shadow-card overflow-hidden">

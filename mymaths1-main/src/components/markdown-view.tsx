@@ -48,6 +48,21 @@ function renderInline(text: string) {
   html = html.replace(/`([^`]+)`/g, '<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em]">$1</code>');
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
   html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em class="italic">$2</em>');
+
+  // Render difficulty badge tags nicely
+  html = html.replace(
+    /\[(🟢[^\]]*)\]/g,
+    '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">$1</span>'
+  );
+  html = html.replace(
+    /\[(🟡[^\]]*)\]/g,
+    '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">$1</span>'
+  );
+  html = html.replace(
+    /\[(🔴[^\]]*)\]/g,
+    '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">$1</span>'
+  );
+
   return html;
 }
 

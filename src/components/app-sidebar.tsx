@@ -23,6 +23,7 @@ import {
   BarChart3,
   RotateCcw,
   Bot,
+  Swords,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,6 +40,7 @@ import {
 
 const studyItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/practice-levels", label: "Competitive Solver", icon: Swords },
   { to: "/formulas", label: "Formulas", icon: BookOpenText },
   { to: "/solver", label: "Solver", icon: Calculator },
   { to: "/paper-solver", label: "Paper Solver", icon: FileText },
