@@ -16,6 +16,12 @@ async function callAI(
   const model = "gemini-flash-lite-latest";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+  const universalSimplicityPrompt = `CRITICAL DIRECTIVE — ULTRA-SIMPLE ANSWERS & CLEAR MATHEMATICAL FORMULAS:
+1. EXTREME SIMPLICITY: Always explain answers and steps as SIMPLY and DIRECTLY as humanly possible. Never make explanations complicated, verbose, or dense with heavy academic jargon. Explain in straightforward, plain words that any student can immediately understand.
+2. CLEAR MATHEMATICAL FORMULA: The governing mathematical formula must ALWAYS be stated clearly and explicitly on its own line as a standard display mathematical expression in LaTeX ($$ ... $$) before substituting numerical values.
+3. CLEAN MATHEMATICAL EXPRESSIONS: Every equation, variable, fraction, and step must use clean, standard LaTeX ($$ ... $$ for display equations, $ ... $ for inline expressions). Use \\frac{a}{b}, \\sqrt{...}, ^{}, _{}, \\int, \\sum, \\lim, etc. NEVER use crude ASCII math like a/b or x^2.
+4. PROMINENT FINAL ANSWER: Make the final answer crystal clear on its own line so the user can spot the result immediately.`;
+
   const body: any = {
     contents: [
       {
@@ -24,7 +30,7 @@ async function callAI(
       }
     ],
     systemInstruction: {
-      parts: [{ text: systemPrompt }]
+      parts: [{ text: `${universalSimplicityPrompt}\n\n${systemPrompt}` }]
     }
   };
 
@@ -72,21 +78,57 @@ const LEVEL = "college-level mathematics";
 
 export const getFormulas = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ topic: z.string().trim().min(1).max(200) }).parse(input),
+    z
+      .object({
+        topic: z.string().trim().min(1).max(200),
+        difficulty: z.enum(["all", "easy", "medium", "hard"]).optional().default("all"),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    const diff = data.difficulty || "all";
+    
+    let difficultyInstruction = "";
+    if (diff === "easy") {
+      difficultyInstruction = `Focus STRICTLY on FOUNDATION / EASY level formulas: core elementary definitions, standard rules, fundamental identities, and basic prerequisite properties.
+Mark every formula explicitly with the badge [🟢 Foundation / Easy]. Include prerequisites and intuitive meaning.`;
+    } else if (diff === "medium") {
+      difficultyInstruction = `Focus STRICTLY on INTERMEDIATE / MEDIUM level formulas: core college-level operational formulas, techniques (e.g. transformations, multi-step identities, applied standard formulas).
+Mark every formula explicitly with the badge [🟡 Intermediate]. Include key variable conditions and standard exam applications.`;
+    } else if (diff === "hard") {
+      difficultyInstruction = `Focus STRICTLY on ADVANCED / EXAM LEVEL (HARD) formulas: complex multivariable/higher-order theorems, specialized reduction formulas, boundary conditions, and olympiad/competitive exam identities.
+Mark every formula explicitly with the badge [🔴 Advanced / Exam Level]. Include rigorous conditions, caveats, and master-level exam tips.`;
+    } else {
+      difficultyInstruction = `Organize the formulas systematically into 3 CLEAR DIFFICULTY TIERS:
+### 🟢 Foundation / Easy Level
+(Core fundamental rules, standard definitions, and essential identities that every student must know first)
+
+### 🟡 Intermediate / Standard Level
+(Applied operational formulas, transformations, and standard semester exam equations)
+
+### 🔴 Advanced / Exam Mastery Level
+(Complex theorems, higher-order results, specialized reduction formulas, and tricky edge-case identities)
+
+For EACH formula, include its difficulty badge: [🟢 Foundation], [🟡 Intermediate], or [🔴 Advanced].`;
+    }
+
     const content = await callAI(
-      `You are an expert ${LEVEL} tutor. When given a topic, you MUST list every single important formula, identity, rule, and theorem associated with that topic. Do not omit any equations; be exhaustively thorough so that a student has a complete guide for their exams.
-Format strictly as Markdown with sections:
-## Topic
-A one-sentence overview.
+      `You are an expert ${LEVEL} tutor. When given a topic, you MUST provide an exhaustive, authoritative formula sheet for that topic categorized with CLEAR DIFFICULTY LEVELS.
+${difficultyInstruction}
+
+Format strictly as Markdown:
+## Topic Overview
+A concise, high-yield overview of "${data.topic}" and what this formula sheet covers.
+
 ## Formulas
-A numbered list. For each formula:
-- Bold name
-- The formula on its own line as a DISPLAY LaTeX equation wrapped in $$ ... $$ (use proper LaTeX: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\int, \\sum, \\lim, \\vec{}, \\cdot, etc.)
-- A one-line description of variables and when to use it (inline math wrapped in single $ ... $)
-Always use real LaTeX, never plain ASCII. Be comprehensive and thorough. No fluff, no greetings.`,
-      `Topic: ${data.topic}`,
+Follow the specified difficulty grouping or numbered structure. For EACH formula:
+- **Formula Name** \`[Difficulty Badge]\`
+- Display LaTeX equation on its own line wrapped in $$ ... $$ (strictly use valid LaTeX: \\frac{}{}, \\sqrt{}, ^{}, _{}, \\int, \\sum, \\lim, \\vec{}, \\cdot, \\partial, etc.)
+- **Usage & Conditions:** A clear explanation of variables, constraints, and when/why to apply this formula (inline math in single $ ... $)
+- **Difficulty Rating:** State either 🟢 Foundation (Easy), 🟡 Intermediate (Medium), or 🔴 Advanced (Hard), along with recommended prerequisites.
+
+Always use real LaTeX, never plain ASCII. Be comprehensive, precise, and practical for college exam preparation. No fluff, no greetings.`,
+      `Topic: ${data.topic}${diff !== "all" ? `\nTarget Difficulty: ${diff}` : ""}`,
     );
     return { content };
   });
@@ -113,28 +155,39 @@ export const solveStepByStep = createServerFn({ method: "POST" })
     }
 
     const lang = data.language || "English";
-    const systemPrompt = `You are an exceptionally clear and friendly ${LEVEL} tutor. Solve the math problem and explain it in active, simple, and conversational words as if explaining it to a friend. 
-Since the student will listen to your explanation read aloud, keep your tone very engaging, active, and easy to understand when spoken. Explain mathematical actions clearly (for instance, explain "why" in a friendly, conversational manner).
+    const systemPrompt = `You are an exceptionally clear and friendly ${LEVEL} tutor. Solve the math problem and explain it in active, very simple, plain, and conversational words as if explaining it to a friend. Never make it complicated or use dense academic jargon.
+Since the student will listen to your explanation read aloud, keep your tone very engaging, active, and easy to understand when spoken. Explain mathematical actions clearly and simply.
 IMPORTANT: You MUST write all explanations, headings, idea, and final answer in ${lang} (for example, if ${lang} is Spanish, write explanations in Spanish; if it is Hindi, write in Hindi).
 
 ${data.image ? `IMPORTANT: An image of the math problem has been provided. First, transcribe/describe the math problem from the image carefully in ${lang}, and then solve it.` : ""}
 
-ALL math must be real LaTeX: inline math wrapped in $ ... $, display equations on their own line wrapped in $$ ... $$.
-Use \\\\frac{}{}, \\\\sqrt{}, ^{}, _{}, \\\\int, \\\\sum, \\\\lim, \\\\vec{}, \\\\cdot, \\\\Rightarrow, etc. Never write plain ASCII math like x^2, sqrt(x), or integral.
+MANDATORY RULES:
+1. FORMULA FIRST: State the governing mathematical formula clearly on its own line using display LaTeX ($$ ... $$) before plugging in any values. State what each variable means in 1 simple sentence.
+2. VERY SIMPLE EXPLANATION: Explain every step in plain, uncomplicated words. Avoid complicated technical jargon.
+3. REAL LATEX: Inline math in $ ... $, display equations on their own line in $$ ... $$. Use \\\\frac{}{}, \\\\sqrt{}, ^{}, _{}, \\\\int, \\\\sum, \\\\lim, \\\\vec{}, \\\\cdot, \\\\Rightarrow, etc. Never write plain ASCII math like x^2 or sqrt(x).
 
-Format as Markdown:
+Format strictly as Markdown:
 ## Problem
 Restate the problem in one line (with LaTeX).
+
+## Formula Used
+State the exact mathematical formula needed for this problem as a clear display mathematical expression:
+$$ \\text{formula here} $$
+State what each symbol in the formula means in one very simple, plain sentence.
+
 ## Idea
-1–2 sentences in simple words: what kind of problem this is and the trick we'll use to crack it. Use very simple terms.
+1–2 sentences in very simple, plain words: what kind of problem this is and the simple trick we'll use to solve it.
+
 ## Steps
-Numbered steps. For each step:
-- A short bold heading in simple language (e.g. **Move the x terms to one side**)
-- The math as $$ display math $$
-- One short, active, friendly spoken sentence explaining why we did it or what we did ("Now, we cancel out 2 from both sides because we want x alone"). Keep it highly conversational and voice-friendly.
-Keep each step small. If a step has algebra inside algebra, split it into two steps.
+Numbered steps (1., 2., 3., etc.). For each step:
+1. **Short step heading in plain words**
+$$ \\text{display math} $$
+One short, active, friendly spoken sentence in simple words explaining what we did ("Now, we subtract 5 from both sides because we want x alone"). Keep each step small, simple, and easy to understand.
+
 ## Final Answer
-Bold "Final Answer:" with the result as $$ display math $$, then one line in plain language confirming what it means.
+**Final Answer:**
+$$ \\text{result as display math} $$
+One short sentence in plain language confirming what it means.
 
 No greetings, no filler, no "let's", no "certainly".`;
 
@@ -187,17 +240,18 @@ Conversation so far:
 ${historyText || "(no prior conversation)"}
 
 Your role as a tutor:
-1. In your FIRST response: Acknowledge their confusion warmly (1 sentence), then re-explain ONLY this step clearly — use a simpler analogy, sub-steps, or a concrete example. Answer their exact question. Show math if helpful.
-2. In follow-up responses: Respond to what the student just said — affirm correct thinking, gently correct mistakes, or dig deeper. Build on the conversation.
-3. ALWAYS end every response with a short tutor question directed at the student — this is critical. The question should check their understanding or guide them to think. Examples:
+1. EXPLAIN VERY SIMPLY: Always give the explanation VERY SIMPLY. Never use complicated academic jargon or dense wording. Explain like you are talking to a beginner using plain, friendly words and clear short sub-steps.
+2. CLEAR FORMULA & MATHEMATICAL EXPRESSIONS: If a formula is involved, write the exact formula clearly on its own line in display LaTeX ($$ ... $$) before substituting numbers. Use proper LaTeX for all inline ($...$) and display ($$...$$) expressions.
+3. In your FIRST response: Acknowledge their confusion warmly (1 sentence), then re-explain ONLY this step simply with concrete numbers.
+4. In follow-up responses: Respond to what the student just said — affirm correct thinking, gently correct mistakes.
+5. ALWAYS end every response with a short tutor question directed at the student to check understanding. Examples:
    - "Does that make sense now — can you tell me in your own words what we did?"
    - "What do you think the next step would be after this?"
-   - "Try applying this idea: if x was 3 instead, what would the result be?"
+   - "Try applying this: if x was 3 instead, what would the result be?"
    - "Which part still feels unclear to you?"
-4. Keep the whole response under 130 words.
-5. Use LaTeX for all math: inline in $...$, display in $$...$$.
-6. Write entirely in ${lang}.
-7. Never say "Great question!" or "Certainly!". Be warm but direct.`;
+6. Keep the whole response under 130 words.
+7. Write entirely in ${lang}.
+8. Never say "Great question!" or "Certainly!". Be warm, simple, and direct.`;
 
     const lastStudentMsg = data.conversationHistory
       .filter((m) => m.role === "student")
@@ -345,11 +399,13 @@ export const solveQuestionPaper = createServerFn({ method: "POST" })
     let systemPrompt = "";
     if (data.mode === "solve") {
       systemPrompt = `You are a friendly college-level mathematics tutor. You are presented with a mathematics question paper or list of questions. Solve every question found in this document step-by-step.
+Always give answers and explanations VERY SIMPLY, in plain everyday words without complicated jargon.
 For each question:
 - Transcribe the question clearly.
-- Provide a detailed walkthrough of the steps using complete and clear college-level math.
-- Use real LaTeX ($...$ inline, $$...$$ display).
-- Keep formatting clean and readable. Make sure the final answers are bolded.`;
+- Clearly state the governing mathematical formula on its own line using display LaTeX ($$ ... $$) before substituting numbers.
+- Provide a simple, clear, bite-sized walkthrough of the steps.
+- Use real LaTeX ($...$ inline, $$...$$ display) for all mathematical expressions.
+- Highlight and bold the final answer clearly.`;
     } else if (data.mode === "extract") {
       systemPrompt = `You are a helpful teaching assistant. Transcribe and extract all mathematical questions/problems found in the uploaded question paper.
 - Present them as a clean, numbered list.
@@ -357,9 +413,9 @@ For each question:
 - Do not solve the questions. Only transcribe them exactly as they are.`;
     } else {
       systemPrompt = `You are an expert college math tutor. Analyze this question paper and extract the key math concepts, theorems, and formulas that are required to solve it.
-- Summarize the main topics tested in the paper.
-- Provide a list of the core formulas and theorems tested (using LaTeX).
-- Give brief tips/guidelines on how students should study for these topics.`;
+- Summarize the main topics tested in simple, uncomplicated language.
+- Provide a list of the core formulas and theorems tested, displayed clearly in LaTeX ($$ ... $$).
+- Give brief, simple tips on how students should study for these topics.`;
     }
 
     if (data.notes) {
@@ -396,9 +452,10 @@ export const solveGraphOrDiagram = createServerFn({ method: "POST" })
     const systemPrompt = `You are an expert ${LEVEL} tutor specializing in geometry diagrams, coordinate graphs, calculus plots, and mathematical charts.
 Analyze the provided image of the diagram/graph. If the user provided additional instruction, focus on solving that specific query.
 Perform the following analysis:
-1. **Visual Extraction**: Identify the geometry shapes, vertices, lines, angles, coordinate axes, function curves, intercept points, or plotted values in the image.
-2. **Mathematical Formulation**: State the mathematical formulas, rules (e.g., trigonometric identities, triangle theorems, derivative slopes, equation of circles/lines) relevant to this diagram.
-3. **Walkthrough & Solution**: Solve the problem step-by-step with clear logical deduction. Use DISPLAY LaTeX equations wrapped in $$ ... $$ on their own lines for all final values and key equations.
+1. **Visual Extraction**: Identify the geometry shapes, vertices, lines, angles, coordinate axes, function curves, intercept points, or plotted values simply and clearly.
+2. **Governing Formula**: State the governing mathematical formula(s) clearly on its own line as a display mathematical expression ($$ ... $$) before substituting numbers.
+3. **Walkthrough & Solution**: Solve the problem step-by-step in very simple, plain language. Never make it complicated. Use DISPLAY LaTeX equations wrapped in $$ ... $$ on their own lines for all final values and key equations.
+4. **Final Answer**: State the final answer boldly and clearly on its own line.
 Ensure the layout is highly structured and beautiful.`;
 
     const userPrompt = data.instruction 
@@ -541,27 +598,32 @@ export const solveMathProblemWithAi = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const lang = data.language || "English";
     const systemPrompt = `You are an expert math tutor. Solve the math problem and return the result in strict JSON format.
+Always explain very simply in plain, everyday words without complicated jargon. State the primary governing formula clearly as a mathematical expression before substituting values.
+
 You must return the response as a JSON object matching this schema:
 {
   "recognizedProblem": "string — the problem restated with inline LaTeX math wrapped in $...$ delimiters",
+  "formulaUsed": "string — the primary governing mathematical formula displayed clearly in LaTeX ($$ ... $$) before substituting numbers. Example: '$$x = \\\\frac{-b \\\\pm \\\\sqrt{b^{2}-4ac}}{2a}$$'",
   "finalAnswer": "string — ONLY the raw LaTeX expression of the final answer WITHOUT any dollar-sign delimiters (no $ or $$). Example: x = \\\\frac{3}{2}",
   "steps": [
     {
-      "title": "string — a short, plain-text descriptive step title WITHOUT any LaTeX or math symbols (e.g., 'Simplify the fraction', 'Factor the quadratic')",
-      "explanation": "string — a friendly, conversational explanation. Any math references MUST use inline LaTeX wrapped in single dollar signs $...$. Example: 'We divide both sides by $2$ to isolate $x$.'",
+      "title": "string — a short, plain-text descriptive step title WITHOUT any LaTeX or math symbols (e.g., 'Identify the coefficients', 'Apply the quadratic formula', 'Simplify the terms')",
+      "explanation": "string — an ULTRA-SIMPLE, friendly explanation in plain words without complicated jargon. Any math references MUST use inline LaTeX wrapped in single dollar signs $...$. Example: 'We divide both sides by $2$ to get $x$ by itself.'",
       "latex": "string — the key mathematical equation(s) for this step as display LaTeX. MUST be wrapped in double dollar signs $$...$$. Use proper LaTeX commands: \\\\frac{}{}, \\\\sqrt{}, \\\\int, \\\\sum, \\\\lim, ^{}, _{}, \\\\Rightarrow, \\\\cdot, etc. NEVER use plain ASCII like x^2, sqrt(x), or a/b."
     }
   ]
 }
 
-CRITICAL LATEX FORMATTING RULES:
+CRITICAL RULES FOR SIMPLICITY AND FORMULAS:
+- SIMPLICITY FIRST: Always keep explanations very simple, direct, and easy to understand. Never use complicated academic words.
+- FORMULA USED: State the clean mathematical formula clearly in the "formulaUsed" field in display LaTeX ($$ ... $$) before numbers are plugged in.
 - "recognizedProblem": Wrap ALL math expressions in single dollar signs $...$. Example: "Solve $x^{2} - 5x + 6 = 0$"
 - "finalAnswer": Write ONLY raw LaTeX with NO dollar signs. Example: "x = 3 \\\\text{ or } x = 2" (NOT "$$x=3$$" and NOT "$x=3$")
 - "title": Plain text ONLY. No LaTeX, no dollar signs, no math symbols. Keep it short and descriptive.
-- "explanation": Use inline math with single $...$ when referencing variables or expressions. Example: "We move $5x$ to the other side."
+- "explanation": Use simple words with inline math $...$.
 - "latex": Always wrap in $$...$$. Use proper LaTeX commands. Example: "$$x = \\\\frac{-b \\\\pm \\\\sqrt{b^{2} - 4ac}}{2a}$$"
 - NEVER write plain ASCII math anywhere. Always use LaTeX: \\\\frac{a}{b} not a/b, x^{2} not x^2, \\\\sqrt{x} not sqrt(x).
-- Write recognizedProblem, finalAnswer, explanation, and title text in the requested language: ${lang}.
+- Write recognizedProblem, formulaUsed, finalAnswer, explanation, and title text in the requested language: ${lang}.
 - Do not skip any steps. Provide a complete, logical path to the solution.
 - Return ONLY raw JSON text. Do not include markdown code block backticks like \`\`\`json or \`\`\`.`;
 
@@ -571,8 +633,17 @@ CRITICAL LATEX FORMATTING RULES:
       true
     );
 
+    const tryParse = (raw: string) => {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        const sanitized = raw.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+        return JSON.parse(sanitized);
+      }
+    };
+
     try {
-      const parsed = JSON.parse(content);
+      const parsed = tryParse(content);
       return parsed;
     } catch (err) {
       console.error("Failed to parse JSON response from Gemini:", content);
@@ -677,11 +748,16 @@ export const queryVoiceTutor = createServerFn({ method: "POST" })
       .join("\n") || "";
 
     const systemPrompt = `You are a friendly, encouraging, and clear college-level math tutor helping a student via a voice interface.
+Always explain things VERY SIMPLY, directly, and without complicated academic jargon.
 The student will ask you questions by speaking. You must return a JSON response with two properties:
-1. "spokenText": This text will be read aloud to the student using text-to-speech. It must be highly conversational, friendly, and easy to speak and listen to.
-   - Speak math naturally in plain words. Do NOT include raw LaTeX code or symbols in this field (e.g. say "integral of x squared" instead of "\\\\int x^2", "x equals negative b plus or minus square root of b squared minus four a c all over two a" instead of writing raw formulas).
+1. "spokenText": This text will be read aloud to the student using text-to-speech. It must be highly conversational, very simple, friendly, and easy to speak and listen to.
+   - Explain in the simplest possible terms. Avoid complicated words.
+   - Speak math naturally in plain words. Do NOT include raw LaTeX code or symbols in this field (e.g. say "integral of x squared", "square root of x", "x equals negative b plus or minus square root of b squared minus 4 a c, all divided by 2 a").
    - Keep it concise, clear, and direct. Break down explanations into simple spoken steps. Limit this to under 80 words.
-2. "displayText": This text will be shown on the screen. It can be formatted with Markdown and proper LaTeX ($...$ for inline, $$...$$ for display) so the student can read the math clearly. It can include full formulas and step-by-step calculations.
+2. "displayText": This text will be shown on the screen.
+   - State the governing mathematical formula clearly on its own line in display LaTeX ($$ ... $$) before steps.
+   - Present simple, bite-sized steps using Markdown and proper LaTeX ($...$ for inline, $$...$$ for display).
+   - Clearly state the final answer.
 
 Ensure the returned format is a valid JSON object matching the schema:
 {
