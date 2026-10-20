@@ -35,6 +35,7 @@ interface SolvedStep {
 
 interface SolvedResponse {
   recognizedProblem: string;
+  formulaUsed?: string;
   finalAnswer: string;
   steps: SolvedStep[];
 }
@@ -344,6 +345,17 @@ function DailyChallengePage() {
             
             {solution?.steps ? (
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                {solution.formulaUsed && (
+                  <div className="rounded-xl border border-indigo-500/25 bg-indigo-500/5 p-4 space-y-1 text-center shadow-sm">
+                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block">
+                      📐 Governing Formula
+                    </span>
+                    <div className="py-1">
+                      <MarkdownView text={solution.formulaUsed.startsWith("$$") ? solution.formulaUsed : `$$${solution.formulaUsed}$$`} />
+                    </div>
+                  </div>
+                )}
+
                 {solution.steps.map((step, idx) => (
                   <div 
                     key={idx} 

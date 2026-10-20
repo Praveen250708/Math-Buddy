@@ -32,6 +32,7 @@ interface SolvedStep {
 
 interface SolvedResponse {
   recognizedProblem: string;
+  formulaUsed?: string;
   finalAnswer: string;
   steps: SolvedStep[];
 }
@@ -872,6 +873,17 @@ function SnapSolvePage() {
                       <span className="font-bold text-foreground">Problem: </span>
                       <MarkdownView text={solvedData.recognizedProblem} />
                     </div>
+
+                    {solvedData.formulaUsed && (
+                      <div className="p-3 bg-indigo-500/10 border border-indigo-500/25 rounded-lg text-sm overflow-x-auto">
+                        <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                          📐 Governing Formula
+                        </span>
+                        <div className="text-center py-1">
+                          <MarkdownView text={solvedData.formulaUsed.startsWith("$$") ? solvedData.formulaUsed : `$$${solvedData.formulaUsed}$$`} />
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-2 border-t border-border/60">
                       <div className="text-xs font-bold text-muted-foreground uppercase mb-1">Final Answer</div>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { BookOpenText, Loader2, Search, Copy, Bookmark, Printer, Mic, MicOff } from "lucide-react";
+import { BookOpenText, Loader2, Search, Copy, Bookmark, Printer, Mic, MicOff, SlidersHorizontal, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,58 @@ import { spendPoints } from "@/lib/store.functions";
 import { MarkdownView } from "@/components/markdown-view";
 import { consumePrefilledTopic } from "@/lib/topic-prefill";
 import { VoiceOverlay } from "@/components/voice-overlay";
-import { checkIsPremium } from "@/lib/auth-helpers";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/formulas")({
   component: FormulasPage,
 });
+
+type DifficultyLevel = "all" | "easy" | "medium" | "hard";
+
+const DIFFICULTY_OPTIONS: Array<{
+  id: DifficultyLevel;
+  label: string;
+  badge: string;
+  desc: string;
+  activeClass: string;
+}> = [
+  {
+    id: "all",
+    label: "All Levels",
+    badge: "🌟 All Levels",
+    desc: "Complete reference grouped by difficulty tiers",
+    activeClass: "bg-primary text-primary-foreground shadow-sm",
+  },
+  {
+    id: "easy",
+    label: "Foundation",
+    badge: "🟢 Foundation / Easy",
+    desc: "Core definitions & elementary rules",
+    activeClass: "bg-emerald-600 text-white shadow-sm",
+  },
+  {
+    id: "medium",
+    label: "Intermediate",
+    badge: "🟡 Intermediate",
+    desc: "Standard college exam operational formulas",
+    activeClass: "bg-amber-600 text-white shadow-sm",
+  },
+  {
+    id: "hard",
+    label: "Advanced",
+    badge: "🔴 Advanced / Exam Level",
+    desc: "High-yield complex theorems & reduction rules",
+    activeClass: "bg-rose-600 text-white shadow-sm",
+  },
+];
 
 function FormulasPage() {
   const fn = useServerFn(getFormulas);
@@ -32,6 +79,7 @@ function FormulasPage() {
 
   const [topic, setTopic] = useState("");
   const [activeTopic, setActiveTopic] = useState("");
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>("all");
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -123,7 +171,7 @@ function FormulasPage() {
       setIsListening(false);
       const finalTopic = latestTranscriptRef.current.trim();
       if (finalTopic) {
-        void submit(finalTopic);
+        void submit(finalTopic, difficulty);
       }
     };
 
@@ -135,22 +183,30 @@ function FormulasPage() {
     const pre = consumePrefilledTopic();
     if (pre) {
       setTopic(pre);
-      void submit(pre);
+      void submit(pre, difficulty);
     }
   }, []);
 
-  const submit = async (t: string) => {
+  const submit = async (t: string, diff: DifficultyLevel = difficulty) => {
     if (!t.trim()) return;
     setLoading(true);
     setContent("");
     try {
-      const res = await fn({ data: { topic: t } });
+      const res = await fn({ data: { topic: t, difficulty: diff } });
       setContent(res.content);
       setActiveTopic(t);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDifficultyChange = (newDiff: DifficultyLevel) => {
+    setDifficulty(newDiff);
+    const targetTopic = activeTopic.trim() || topic.trim();
+    if (targetTopic) {
+      void submit(targetTopic, newDiff);
     }
   };
 
@@ -165,8 +221,22 @@ function FormulasPage() {
 
   const saveBookmark = async () => {
     try {
+      const diffTag =
+        difficulty === "easy"
+          ? " (Foundation / Easy)"
+          : difficulty === "medium"
+          ? " (Intermediate)"
+          : difficulty === "hard"
+          ? " (Advanced)"
+          : " (All Levels)";
+
       await bookmarkFn({
-        data: { kind: "formula", topic: activeTopic, title: `Formulas: ${activeTopic}`, content },
+        data: {
+          kind: "formula",
+          topic: activeTopic,
+          title: `Formulas: ${activeTopic}${diffTag}`,
+          content,
+        },
       });
       toast.success("Saved to bookmarks");
     } catch (err) {
@@ -201,7 +271,7 @@ function FormulasPage() {
           <div className="space-y-2">
             <h3 className="text-xl font-bold font-display">Premium Feature Locked</h3>
             <p className="text-sm text-muted-foreground">
-              Get exhaustive formula collections, PDF downloads, printing capabilities, quick category tabs, and voice-activated search.
+              Get exhaustive formula collections with difficulty filters, PDF downloads, printing capabilities, quick category tabs, and voice-activated search.
             </p>
           </div>
 
@@ -238,15 +308,15 @@ function FormulasPage() {
       <PageHeader
         icon={<BookOpenText className="h-6 w-6" />}
         title="Formula Reference"
-        subtitle="Type any college math topic and get every important formula in one clean list."
+        subtitle="Type any college math topic and get every important formula categorized by your chosen difficulty level."
       />
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          submit(topic);
+          submit(topic, difficulty);
         }}
-        className="flex flex-col gap-3 sm:flex-row no-print"
+        className="flex flex-col gap-3 sm:flex-row no-print items-stretch"
       >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -254,7 +324,7 @@ function FormulasPage() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="e.g. Differentiation, Vector Calculus, Matrices, Probability…"
-            className="pl-9 pr-10"
+            className="pl-9 pr-10 h-11"
           />
           <button
             type="button"
@@ -267,8 +337,43 @@ function FormulasPage() {
             {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </button>
         </div>
-        <Button type="submit" disabled={loading} className="bg-gradient-primary">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+
+        {/* Difficulty Level Dropdown Menu */}
+        <div className="w-full sm:w-[240px]">
+          <Select
+            value={difficulty}
+            onValueChange={(val) => handleDifficultyChange(val as DifficultyLevel)}
+          >
+            <SelectTrigger className="h-11 border-border/80 bg-card hover:border-primary/50 transition-all font-medium text-xs px-3 shadow-sm">
+              <div className="flex items-center gap-2 truncate">
+                <SlidersHorizontal className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate">{DIFFICULTY_OPTIONS.find((o) => o.id === difficulty)?.badge}</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border shadow-xl min-w-[240px]">
+              <SelectGroup>
+                <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground px-2 py-1.5">
+                  Difficulty Level
+                </SelectLabel>
+                {DIFFICULTY_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.id}
+                    value={opt.id}
+                    className="cursor-pointer py-2 focus:bg-primary/10 transition-colors"
+                  >
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="font-semibold text-xs text-foreground">{opt.badge}</span>
+                      <span className="text-[10px] text-muted-foreground line-clamp-1">{opt.desc}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button type="submit" disabled={loading} className="bg-gradient-primary h-11 font-semibold px-5 shrink-0">
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
           Get formulas
         </Button>
       </form>
@@ -284,7 +389,7 @@ function FormulasPage() {
               disabled={loading}
               onClick={() => {
                 setTopic(t);
-                void submit(t);
+                void submit(t, difficulty);
               }}
               className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-foreground hover:border-primary hover:text-primary transition-all shadow-sm hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
@@ -295,14 +400,39 @@ function FormulasPage() {
       </div>
 
       {content && (
-        <div className="flex flex-wrap gap-2 no-print">
-          <Button size="sm" variant="outline" onClick={copyAll}><Copy className="mr-1.5 h-4 w-4" /> Copy all</Button>
-          <Button size="sm" variant="outline" onClick={saveBookmark}><Bookmark className="mr-1.5 h-4 w-4" /> Save</Button>
-          <Button size="sm" variant="outline" onClick={printPage}><Printer className="mr-1.5 h-4 w-4" /> Download / Print PDF</Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 no-print rounded-xl border border-border bg-card/60 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground font-medium">Difficulty Level:</span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold ${
+                difficulty === "easy"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  : difficulty === "medium"
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  : difficulty === "hard"
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                  : "bg-primary/15 text-primary border border-primary/30"
+              }`}
+            >
+              {DIFFICULTY_OPTIONS.find((o) => o.id === difficulty)?.badge}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={copyAll}>
+              <Copy className="mr-1.5 h-4 w-4" /> Copy all
+            </Button>
+            <Button size="sm" variant="outline" onClick={saveBookmark}>
+              <Bookmark className="mr-1.5 h-4 w-4" /> Save
+            </Button>
+            <Button size="sm" variant="outline" onClick={printPage}>
+              <Printer className="mr-1.5 h-4 w-4" /> Download / Print PDF
+            </Button>
+          </div>
         </div>
       )}
 
-      <ResultPanel loading={loading} content={content} emptyText="Enter a topic to load its formulas." />
+      <ResultPanel loading={loading} content={content} emptyText="Enter a topic and select your difficulty level to load its formulas." />
     </div>
   );
 }

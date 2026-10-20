@@ -6,7 +6,7 @@ import {
   useNavigate,
   Link,
 } from "@tanstack/react-router";
-import { LogOut, Trophy, Flame, Download, Loader2, Sigma, Sparkles } from "lucide-react";
+import { LogOut, Trophy, Flame, Sigma, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,6 @@ import { Footer } from "@/components/footer";
 import { useServerFn } from "@tanstack/react-start";
 import { pingStreak, getMyProfile, getStreakFreezes } from "@/lib/gamification.functions";
 import { getClientUser } from "@/lib/auth-helpers";
-import { generateProjectZip, checkIsDeveloperWorkspace } from "@/lib/ai.functions";
 import { getSystemSettings } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -40,62 +39,13 @@ function AuthLayout() {
   const ping = useServerFn(pingStreak);
   const getProfileFn = useServerFn(getMyProfile);
   const getFreezeFn = useServerFn(getStreakFreezes);
-  const generateZipFn = useServerFn(generateProjectZip);
   const getSettingsFn = useServerFn(getSystemSettings);
-  const checkIsDevFn = useServerFn(checkIsDeveloperWorkspace);
 
   const [points, setPoints] = useState<number | null>(null);
   const [streak, setStreak] = useState<number>(0);
   const [streakFreezes, setStreakFreezes] = useState<number>(2);
-  const [downloading, setDownloading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
-  const [isLocal, setIsLocal] = useState(false);
-  const [isDeveloperWorkspace, setIsDeveloperWorkspace] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsLocal(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    }
-    checkIsDevFn({}).then((res) => {
-      if (res && res.isDeveloper) {
-        setIsDeveloperWorkspace(true);
-      }
-    }).catch(() => {});
-  }, [checkIsDevFn]);
-
-  const onDownloadZip = async () => {
-    setDownloading(true);
-    toast.info("Generating project ZIP file, please wait...");
-    try {
-      const res = await generateZipFn({});
-      if (res && res.base64) {
-        const binaryString = window.atob(res.base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: "application/zip" });
-        
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "math-buddy-project.zip";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-        
-        toast.success("Project ZIP downloaded successfully!");
-      } else {
-        throw new Error("Invalid response from server");
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to download ZIP file");
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   useEffect(() => {
     let active = true;
@@ -202,23 +152,6 @@ function AuthLayout() {
                 <span className="font-mono">{points ?? 0}</span>
                 <span className="text-muted-foreground">pts</span>
               </div>
-
-              {(!isLocal || isDeveloperWorkspace) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onDownloadZip}
-                  disabled={downloading}
-                  className="gap-1.5 border-primary/30 hover:bg-primary/10 text-primary font-medium"
-                >
-                  {downloading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Download className="h-3.5 w-3.5" />
-                  )}
-                  <span>Install App</span>
-                </Button>
-              )}
 
                <ThemeToggle />
                <Button variant="ghost" size="icon" onClick={onLogout} title="Sign out">

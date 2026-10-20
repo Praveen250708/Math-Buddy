@@ -26,6 +26,7 @@ import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedQuestionsRouteImport } from './routes/_authenticated/questions'
 import { Route as AuthenticatedPremiumRouteImport } from './routes/_authenticated/premium'
+import { Route as AuthenticatedPracticeLevelsRouteImport } from './routes/_authenticated/practice-levels'
 import { Route as AuthenticatedPaperSolverRouteImport } from './routes/_authenticated/paper-solver'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedGraphSolverRouteImport } from './routes/_authenticated/graph-solver'
@@ -121,6 +122,12 @@ const AuthenticatedPremiumRoute = AuthenticatedPremiumRouteImport.update({
   path: '/premium',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPracticeLevelsRoute =
+  AuthenticatedPracticeLevelsRouteImport.update({
+    id: '/practice-levels',
+    path: '/practice-levels',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaperSolverRoute =
   AuthenticatedPaperSolverRouteImport.update({
     id: '/paper-solver',
@@ -194,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/practice-levels': typeof AuthenticatedPracticeLevelsRoute
   '/premium': typeof AuthenticatedPremiumRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
@@ -222,6 +230,7 @@ export interface FileRoutesByTo {
   '/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/practice-levels': typeof AuthenticatedPracticeLevelsRoute
   '/premium': typeof AuthenticatedPremiumRoute
   '/questions': typeof AuthenticatedQuestionsRoute
   '/quiz': typeof AuthenticatedQuizRoute
@@ -252,6 +261,7 @@ export interface FileRoutesById {
   '/_authenticated/graph-solver': typeof AuthenticatedGraphSolverRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/paper-solver': typeof AuthenticatedPaperSolverRoute
+  '/_authenticated/practice-levels': typeof AuthenticatedPracticeLevelsRoute
   '/_authenticated/premium': typeof AuthenticatedPremiumRoute
   '/_authenticated/questions': typeof AuthenticatedQuestionsRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/graph-solver'
     | '/leaderboard'
     | '/paper-solver'
+    | '/practice-levels'
     | '/premium'
     | '/questions'
     | '/quiz'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/graph-solver'
     | '/leaderboard'
     | '/paper-solver'
+    | '/practice-levels'
     | '/premium'
     | '/questions'
     | '/quiz'
@@ -339,6 +351,7 @@ export interface FileRouteTypes {
     | '/_authenticated/graph-solver'
     | '/_authenticated/leaderboard'
     | '/_authenticated/paper-solver'
+    | '/_authenticated/practice-levels'
     | '/_authenticated/premium'
     | '/_authenticated/questions'
     | '/_authenticated/quiz'
@@ -482,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPremiumRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/practice-levels': {
+      id: '/_authenticated/practice-levels'
+      path: '/practice-levels'
+      fullPath: '/practice-levels'
+      preLoaderRoute: typeof AuthenticatedPracticeLevelsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/paper-solver': {
       id: '/_authenticated/paper-solver'
       path: '/paper-solver'
@@ -566,6 +586,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGraphSolverRoute: typeof AuthenticatedGraphSolverRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedPaperSolverRoute: typeof AuthenticatedPaperSolverRoute
+  AuthenticatedPracticeLevelsRoute: typeof AuthenticatedPracticeLevelsRoute
   AuthenticatedPremiumRoute: typeof AuthenticatedPremiumRoute
   AuthenticatedQuestionsRoute: typeof AuthenticatedQuestionsRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
@@ -589,6 +610,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGraphSolverRoute: AuthenticatedGraphSolverRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedPaperSolverRoute: AuthenticatedPaperSolverRoute,
+  AuthenticatedPracticeLevelsRoute: AuthenticatedPracticeLevelsRoute,
   AuthenticatedPremiumRoute: AuthenticatedPremiumRoute,
   AuthenticatedQuestionsRoute: AuthenticatedQuestionsRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,

@@ -1,0 +1,275 @@
+/* ==========================================================================
+   Practice Levels Feature Styles
+   All selectors are strictly scoped with the 'lvl-' prefix to prevent
+   any collision with existing application styles.
+   ========================================================================== */
+
+.lvl-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 2.5rem;
+}
+
+.lvl-fade-in {
+  animation: lvl-fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lvl-slide-up {
+  animation: lvl-slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lvl-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lvl-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lvl-pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(99, 102, 241, 0.45);
+  }
+}
+
+/* Overview Header Banner */
+.lvl-hero-banner {
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 50%, rgba(14, 165, 233, 0.08) 100%);
+  padding: 1.75rem 2rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.lvl-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Grid & Cards */
+.lvl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .lvl-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.lvl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 1.25rem;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lvl-card:hover:not(.lvl-card-locked) {
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+}
+
+.lvl-card-active {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.12);
+  animation: lvl-pulseGlow 3s infinite ease-in-out;
+}
+
+.lvl-card-completed {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: linear-gradient(180deg, var(--card) 0%, rgba(16, 185, 129, 0.03) 100%);
+}
+
+.lvl-card-locked {
+  opacity: 0.65;
+  filter: grayscale(0.2);
+  cursor: not-allowed;
+  background: rgba(120, 120, 128, 0.04);
+}
+
+/* Badges */
+.lvl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+.lvl-badge-easy {
+  background: rgba(16, 185, 129, 0.12);
+  color: rgb(16, 185, 129);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.lvl-badge-medium {
+  background: rgba(245, 158, 11, 0.12);
+  color: rgb(217, 119, 6);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.lvl-badge-hard {
+  background: rgba(239, 68, 68, 0.12);
+  color: rgb(239, 68, 68);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.lvl-badge-expert {
+  background: rgba(168, 85, 247, 0.14);
+  color: rgb(168, 85, 247);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.lvl-badge-locked {
+  background: rgba(100, 116, 139, 0.1);
+  color: rgb(100, 116, 139);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+.lvl-badge-completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: rgb(16, 185, 129);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Solving Screen Box */
+.lvl-question-panel {
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.lvl-expression-box {
+  border-radius: 0.875rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(14, 165, 233, 0.03) 100%);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  min-height: 4.5rem;
+}
+
+/* Hints & Solutions */
+.lvl-hint-item {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.05);
+  padding: 0.85rem 1.1rem;
+  margin-top: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.lvl-solution-box {
+  border-radius: 0.875rem;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.03);
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.lvl-step-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Feedback states */
+.lvl-feedback-correct {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+  color: rgb(16, 185, 129);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lvl-feedback-incorrect {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  color: rgb(239, 68, 68);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Inputs */
+.lvl-input-field {
+  height: 3.25rem;
+  font-size: 1.1rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--border);
+  padding: 0 1rem;
+  transition: all 0.2s ease;
+}
+
+.lvl-input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  outline: none;
+}
